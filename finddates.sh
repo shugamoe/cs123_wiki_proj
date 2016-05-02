@@ -22,6 +22,8 @@ for maybe_gz in MATCHES; do
     if [[ $maybe_gz == *gz* ]];
     then
         echo cp $maybe_gz ~/
+    else
+        echo caught $maybe_gz, was not a gz file.
     fi
 
     if [[ $quote == ./speeches/bush-kerry3/KERRY* ]];
@@ -31,29 +33,8 @@ for maybe_gz in MATCHES; do
     echo
 done
 
-echo
-echo
-echo
+# This command finds all the files in the folder with years from 2009 to 2010,
+# from Jan to Feb, from the 1st and 2nd days of feb, and from hours 1 through 
+# 12
+echo *{2009..2010}{01..02}{01..02}-{01..12}*
 
-for quote in ./speeches/obama-mccain3/*.txt; do
-    echo $quote
-    python3 ./Markov.py $OBAMA $MCCAIN $quote $K
-    if [[ $quote == ./speeches/obama-mccain3/OBAMA* ]];
-    then
-        echo "  Answer:   Speaker A"
-    fi
-
-    if [[ $quote == ./speeches/obama-mccain3/MCCAIN* ]];
-    then
-        echo "  Answer:   Speaker B"
-    fi
-    echo
-done
-
-
-string='My long string';
-
-if [[ $string == *"My long"* ]]
-then
-  echo "It's there!";
-fi
