@@ -15,6 +15,11 @@ read -p "Enter an ending hour (00-23)" HOUR_E
 
 export DEST=Y$YEAR_S'-'$YEAR_E'_'M$MONTH_S'-'$MONTH_E'_'D$DAY_S'-'DAY_E'_'H$HOUR_S'_'$HOUR_E
 
+# For now, throw copied files to a labeled folder in the home directory. If this 
+# bash script is used for large date ranges, the memory on the AWS instance
+# might not be big enough to hold.  Might have to first create a large enough
+# volume, attach it, and then make that place the destination.
+
 mkdir ~/$DEST
 export MATCHES=`echo *{$YEAR_S..$YEAR_E}{$MONTH_S..$MONTH_E}{$DAY_S..$DAY_E}-{$DAY_S..$DAY_E}*`
 
