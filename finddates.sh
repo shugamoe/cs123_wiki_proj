@@ -20,7 +20,6 @@ export MATCHES=`echo *{$YEAR_S..$YEAR_E}{$MONTH_S..$MONTH_E}{$DAY_S..$DAY_E}-{$D
 
 
 for maybe_gz in MATCHES; do
-    python3 ./Markov.py $BUSH $KERRY $quote $K 
     if [[ $maybe_gz == *gz* ]];
     then
         echo cp $maybe_gz ~/$DEST
