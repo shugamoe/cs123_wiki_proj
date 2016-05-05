@@ -3,6 +3,7 @@ us-east-1c
 
 # Below is from lab2
 chmod 400 cslab.pem
+# my instance public DNS
 ssh -i cslab.pem ec2-user@ec2-54-210-46-37.compute-1.amazonaws.com
 sudo pip install awscli
 sudo mkdir /mnt/wikipedia
@@ -10,16 +11,13 @@ sudo mount /dev/sdf /mnt/wikipedia
 
 # Create temporary folder to decompress files in ec2 terminal
 cd
-sudo mkdir /temporary
+sudo mkdir temporary
 sudo cp /mnt/wikipedia/wikistats/pagecounts/pagecounts-20090826-200000.gz /home/ec2-user/temporary
-sudo gunzip pagecounts-20090826-200000.gz
+sudo gunzip temporary/pagecounts-20090826-200000.gz
 
 # Necessary to be able to copy files locally
-chmod 777 /home/ec2-user/temporary/pagecounts-20090826-200000
-
-# In local terminal
-mkdir cs12300project
+sudo chmod 777 temporary
 
 # In local terminal
 # ec2-54-210-46-37.compute-1.amazonaws.com is my public DNS instance ID
-scp -i cslab.pem ec2-user@ec2-54-210-46-37.compute-1.amazonaws.com:/home/ec2-user/temporary/pagecounts-20090826-200000 ./cs12300project
+scp -i cslab.pem ec2-user@ec2-54-210-46-37.compute-1.amazonaws.com:/home/ec2-user/temporary/pagecounts-20090826-200000 ./cs123_wiki_proj
