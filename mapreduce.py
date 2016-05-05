@@ -1,9 +1,14 @@
 # To run code: python3 mapreduce.py pagecounts-20090826-200000
-# python3 task1.py  --jobconf mapreduce.job.reduces=1 WhiteHouse-WAVES-Released-1210.csv
+
+# pip3 install --user mr3px.csvprotocol
 
 import mrjob
 from mrjob.job import MRJob
 import re
+import os
+import datetime
+import json
+
 
 class EnglishEntries(MRJob):
 	'''
@@ -11,7 +16,7 @@ class EnglishEntries(MRJob):
 	total views for each page. 
 	'''
 	# To not display null values in the final output
-	# OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
+	OUTPUT_PROTOCOL = mrjob.protocol.JSONProtocol
 
 	def mapper(self, _, line):
 		'''
@@ -28,10 +33,14 @@ class EnglishEntries(MRJob):
 		'''
 		# fields[0] = language, fields[1] = page name, fields[2] = page views, fields[3] = bytes
 		fields = line.split(' ')
+		filename = os.environ["mapreduce_map_input_file"]
+		date = re.findall("[0-9]+-[0-9]+", filename)[0]
+		date = datetime.datetime.strptime(date, "%Y%m%d-%H%M%S")
+		date = datetime.datetime.strftime(date, "%Y/%m/%d/%H")
 
 		# Only care about entries in English
 		if re.findall('en', fields[0]) != []:
-			yield fields[1], int(fields[2])
+			yield fields[1] + " " + date, int(fields[2])
 
 	def combiner(self, page_name, views):
 		'''
@@ -61,9 +70,12 @@ class EnglishEntries(MRJob):
 			Wikipedia page name
 			Total views of that Wikipedia page
 		'''
-		if re.findall("avatar", page_name.lower()) != []:
-			if re.findall("File:", page_name) == []: 
-				yield page_name, sum(views)
+		# print(os.environ["mapreduce_map_input_file"])
+		if re.findall("avatar", page_name[0].lower()) != []:
+			if re.findall("File:", page_name[0]) == []: 
+				with open('mrjob_output.txt', 'w') as outfile: 
+					json.dump(page_name + " " + sum(views), outfile)
+				# yield (page_name, sum(views))
 
 if __name__ == '__main__':
 	EnglishEntries.run()
