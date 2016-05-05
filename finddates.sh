@@ -33,7 +33,7 @@ for maybe_gz in MATCHES; do
     fi
 done
 
-chmod -r 777 ~/mnt/processed/$DEST # This allows the files to then be unzipped.
+chmod 777 ~/mnt/processed/$DEST # This allows the files to then be unzipped.
 cd ~/mnt/processed/$DEST
 find . -type f -exec sed -n '/^#/!p' {} \;
 
