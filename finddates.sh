@@ -20,21 +20,21 @@ export DEST=Y$YEAR_S'-'$YEAR_E'_'M$MONTH_S'-'$MONTH_E'_'D$DAY_S'-'DAY_E'_'H$HOUR
 # might not be big enough to hold.  Might have to first create a large enough
 # volume, attach it, and then make that place the destination.
 
-mkdir ~/mnt/processed/$DEST
+mkdir /mnt/processed/$DEST
 export MATCHES=`echo *{$YEAR_S..$YEAR_E}{$MONTH_S..$MONTH_E}{$DAY_S..$DAY_E}-{$DAY_S..$DAY_E}*`
 
 
 for maybe_gz in MATCHES; do
     if [[ $maybe_gz == *gz* ]];
     then
-        echo cp $maybe_gz ~/mnt/processed/$DEST
+        echo cp $maybe_gz /mnt/processed/$DEST
     else
         echo caught $maybe_gz, was not a gz file.
     fi
 done
 
-chmod 777 ~/mnt/processed/$DEST # This allows the files to then be unzipped.
-cd ~/mnt/processed/$DEST
+chmod 777 /mnt/processed/$DEST # This allows the files to then be unzipped.
+cd /mnt/processed/$DEST
 find . -type f -exec sed -n '/^#/!p' {} \;
 
 
