@@ -20,6 +20,13 @@ import gzip
 
 # Figure out how to decompress files within MRJob
 
+def decompress(file):
+	with gzip.open(file, 'rb') as f: 
+		file_content = f.read()
+		file_content = str(file_content).split("\\n")
+	return file_content
+
+
 
 class EnglishEntries(MRJob):
 	'''
@@ -27,7 +34,7 @@ class EnglishEntries(MRJob):
 	total views for each page. 
 	'''
 	# To not display null values in the final output
-	# INPUT_PROTOCOL = mrjob.protocol.
+	# INPUT_PROTOCOL = mrjob.protocol.JSONFile
 	OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
 
 	def mapper(self, _, file):
@@ -92,4 +99,5 @@ class EnglishEntries(MRJob):
 				yield None, page_name + " " + str(sum(views))
 
 if __name__ == '__main__':
+	decompress.run()
 	EnglishEntries.run()
