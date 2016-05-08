@@ -17,9 +17,8 @@ def move_files():
     This function launches a t2.micro workspace and attaches our final volume
     to it.
     '''
-    get_files = "echo *{2009..2010}{01..12}{01..31}*"
+    get_files = "echo *{2008..2010}{01..12}{01..31}*"
 
-    # Launch EC2 Instance
     launch_proc = subprocess.Popen("ls", shell = True, stdout = subprocess.PIPE)
 
     files = launch_proc.stdout.read()
@@ -29,7 +28,13 @@ def move_files():
 
 
     for gz in files:
-        copy_command = "cp {} penis".format(gz)
-        subprocess.Popen(copy_command, shell = True, stdout = subprocess.PIPE)
+        if "gz" in gz:
+            copy_command = "cp {} /mnt/wiki_unpacked".format(gz)
+            subprocess.Popen(copy_command, shell = True, stdout = 
+                subprocess.PIPE)
 
     print("Done!")
+
+
+if __name__ == '__main__':
+    move_files()
