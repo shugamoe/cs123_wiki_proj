@@ -79,8 +79,15 @@ HYPOTHESES
         Avatar page (for Hinduism)?  
    
 
-   method: Run an mrjob simply looking at the pagetraffic of relevant pages 
-           around the date of the event of interest.
+   method: Run an mrjob looking at the pagetraffic of relevant pages 
+           around the date of the event of interest.  We could utilize a simple
+           linear model:
+
+           page_traf = B_0 + B_1 * <proximity in hours to event> + 
+                       B_2 * <indicator for event taking place> + Error
+
+           Note that the <prox> and <indicator> variables can probably be added
+           after using R or Pandas.  
 
 2. Quantify the relationship between pages that are links and "home" pages, i.e.
    where these links originate
