@@ -7,7 +7,10 @@ Contains hourly wikipedia article traffic statistics dataset covering 16 month
 period from October 01 2008 to February 6, 2010, from raw anonymous logs 
 provided by Domas Mituzas at http://dammit.lt/2007/12/10/wikipedia-page-counters/
 
-Each log file is named with the date and time of collection: pagecounts-20090430-230000.gz
+Each log file is named with the date and time of collection:
+
+pagecounts-<YYYY><MM><DD>-<HH>000<0|1>.gz
+pagecounts-20090430-230000.gz
 
 Each line has 4 fields: projectcode, pagename, pageviews, bytes
 
@@ -22,7 +25,7 @@ Each line has 4 fields: projectcode, pagename, pageviews, bytes
 wikidata/wikilinks (1.1G)
 
 Contains a wikipedia linkgraph dataset provided by Henry Haselgrove.
-These files contain all links between proper english language Wikipedia pages, 
+These files contain all links between *proper english language Wikipedia pages*, 
 that is pages in "namespace 0". This includes disambiguation pages and redirect 
 pages.
 
@@ -40,16 +43,122 @@ To find the page title that corresponds to integer n, just look up the n-th
 line in the file titles-sorted.txt.
 ***
 
+
+
+
+
+
+
+
+
+
+
+
+File summary:
+
+pagecounts-<YYYY><MM><DD>-<HH>000<0|1>.gz
+    -Contains n lines with 4 fields: projectcode (we want "en" only!), pagename,
+                                     pageviews, and bytes
+    -Dates range from 10/01/2008 to 02/06/2010
+links-simple-sorted.txt
+    -Contains all links between proper english language wikipedia pages.
+
+titles-sorted.txt
+    -Contains the names of all English Language Wikipedia pages.
+
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 HYPOTHESES
 -------------------------------------------------------------------------------
-1. Try and Quantify how much the occurrence of events
-2. Quantify the relationship between "Home" page traffic and traffic for pages 
-   that are links on that home page.
-    page's traffic.  
-    -Could potentially use the link and sorted titles dataset as MRJOB is run 
-     to try and do some interesting things.  
-        e.g. We could check the relationship between "Home" page traffic and 
-             and the corresponding links for everything provided in the dataset.
-             (still probably English only though.)
+1. Try and Quantify how much the occurrence of events affects the traffic of
+   Wikipedia pages related to these events, whether this relationship be 
+   substantive or nominal in nature.
+
+   e.g. How much did the release of the movie Avatar (Dec 17/18 2009 release) 
+        affect how traffic to the official Avatar wikipedia page?  To the 
+        Avatar page (for Hinduism)?  
+   
+
+   method: Run an mrjob simply looking at the pagetraffic of relevant pages 
+           around the date of the event of interest.
+
+2. Quantify the relationship between pages that are links and "home" pages, i.e.
+   where these links originate
+
+   e.g. Imagine the simplest case.  A linked page only has one homepage, H. 
+        Let's assume a linear model for the traffic of these three links as:
+
+        link_traf = B_0 + (B_1)*H_traf + (B_2) * (Bytes Ratio * H_traf) + Error
+
+        Where Bytes Ratio = H_bytes / link_bytes
+
+        We would be interested in the coefficients (B_1) and (B_2).
+        Notice that we do not account for the main effects of the Bytes Ratio,
+        this is because we will assume that the Bytes Ratio does not have an 
+        effect on link traffic that is independent of the home page traffic.
+
+        Say a linked page has i  home pages (2 <= i < inf) then the model 
+        generalizes to:
+
+        link_traf = B_0 + (B_1)*H_1_traf + ... + (B_i)*H_i_traf +
+                    (B_(i+1))*(Bytes Ratio 1 * H_1_traf) + ... 
+                    + (B_(2i))*(Bytes Ratio i * H_i_traf) + Error
+
+        In this case we would be interested in all Betas with subscripts greater
+        than 0.  With this linear regression we can test some large scale
+        hypotheses:
+
+            Does the traffic from each home page affect the link traffic in the
+            same way? 
+                Null | B_1 = B_2 = ... B_i and B_i = B_(i+1) = ... = B_(2i)
+
+            With the exception of the bytes ratio related factors, does the 
+            traffic from all the home pages result in the same change in 
+            link page related factors?
+                Null | B_1 = B_2 = ... B_i 
+
+            Do the bytes ratios have any effect on the home page traffic?
+                Null | B_(i+1) = B_(i+2) = ... = B_(2i) = 0
+
+            Do the bytes ratios all have the same effect?
+                Null | B_(i+1) = B_(i+2) = ... = B_(2i) 
+
+            etc.
+
+   method: Speaking with Nick, he has said that this task ought to be done in
+           multiple mrjob steps.  
+
+           Step 1: You'll notice that our wikilinks data only has information 
+                   for proper english language wikipedia pages.  Thus, our 
+                   first mrjob step will be to simply extract the pagetitles, 
+                   traffic, and bytes for each hour of the data.
+
+           Step 2: Utilizing the files links-simple-sorted.txt and 
+                   titles-sorted.txt (perhaps Pickled python versions, or other
+                   forms that might be more efficient to access than pure text
+                   files) we will take the output from step 1 and group it so 
+                   that we can quickly identify link pages and their 
+                   corresponding home pages.  
+
+                   For example, it would be useful for every link page to have 
+                   a separate file that contains all the traffic for that link 
+                   page over time, all the traffic for all of it's home pages 
+                   over time.
+
+                   It might also be useful to have a separate file tracking 
+                   aggregate data.  I.e., one that tracks the average hourly 
+                   traffic for link data, the average hourly traffic for all
+                   home pages, and the average bytes ratio so we could do an 
+                   overall test with the model:
+
+                   all_link_traf = B_0 + (B_1)*H_all_traf + 
+                                   (B_2)*(Avg. Bytes Ratio * H_all_traf) + Error
+
+                   Of course, utilizing an aggregate linear regression could 
+                   mask a whole ton of things, so we might be better off picking
+                   out some interesting individual links and all of their home 
+                   pages.
+
+                        e.g. We select "America" as a link and evaluate it using
+                             the generalized linear regression model provided 
+                             above.

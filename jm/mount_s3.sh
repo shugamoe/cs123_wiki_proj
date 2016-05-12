@@ -10,7 +10,7 @@ cd s3fs-fuse-1.78
 make
 sudo make install
 cd
-echo "access-key-id:secret" > .passwd-s3fs
+echo "AKIAJ7KNXNMC4B2N3JIA:ejJ3DjBQ9dniU5m/UlpvcY+SSZO3VD9BZqJzpuTI" > .passwd-s3fs
 chmod 600 .passwd-s3fs 
-mkdir name-of-mount-directory
-s3fs name-of-s3-bucket  name-of-mount-directory
+mkdir wikitrafv2big
+s3fs wikitrafv2big  wikitrafv2big
