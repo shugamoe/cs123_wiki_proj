@@ -87,7 +87,8 @@ HYPOTHESES
                        B_2 * <indicator for event taking place> + Error
 
            Note that the <prox> and <indicator> variables can probably be added
-           after using R or Pandas.  
+           after using R or Pandas, otherwise, if it is easy to add in during
+           the actual mrjob we should probably do so.   
 
 2. Quantify the relationship between pages that are links and "home" pages, i.e.
    where these links originate
