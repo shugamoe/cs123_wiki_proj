@@ -1,11 +1,11 @@
 #!/bin/bash 
 
 
-read -p "Enter a date range:" DATES
+read -p "Enter hour from 00 to 23 <HH>:" HOURS
 
-for f in pagecounts-$DATES*; do
+for f in *-$HOURS00*; do
     echo Filtering $f
-    sed -i '/^en[[:space:]]/!d' $f
+    sed -i '/^en /!d' $f
 done
 
 

@@ -1,4 +1,0 @@
-sed -i '/^en[[:space:]]/!d' test.txt 
-
-
-HOLY FUCK THIS DELETES ALL LINES IN A FILE THAT DON'T START with "en"

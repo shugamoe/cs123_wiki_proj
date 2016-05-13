@@ -31,3 +31,15 @@ def launch_ec2_workspace():
 
 if __name__ == "__main__":
     launch_ec2_workspace()
+
+
+
+
+
+
+scp -i ~/cslab.pem mount_s3.sh ec2-user@$ADDR:~/
+ssh -i ~/cslab.pem ec2-user@$ADDR
+./mount_s3.sh
+exit
+scp -i ~/cslab.pem enonly.sh ec2-user@$ADDR:~/s3_wiki/pagecounts/
+ssh -i ~/cslab.pem ec2-user@$ADDR

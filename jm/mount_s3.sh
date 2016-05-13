@@ -12,5 +12,5 @@ sudo make install
 cd
 echo "AKIAJ7KNXNMC4B2N3JIA:ejJ3DjBQ9dniU5m/UlpvcY+SSZO3VD9BZqJzpuTI" > .passwd-s3fs
 chmod 600 .passwd-s3fs 
-mkdir wikitrafv2big
-s3fs wikitrafv2big  wikitrafv2big
+mkdir s3_wiki
+s3fs wikitrafv2big  s3_wiki
