@@ -40,7 +40,7 @@ def launch_filter_node(inst_type):
     inst_info = json.loads((dns_proc.stdout.read()).decode("utf-8"))
 
     dns = inst_info['Reservations'][0]['Instances'][0]['PublicDnsName']
-    print("Public DNS is: ec2-user@{}\n\n".format(dns))
+    print("[FUll] Public DNS is: ec2-user@{}\n\n".format(dns))
 
     # Let's upload our bash necessary bash scripts
 
@@ -59,21 +59,9 @@ def launch_filter_node(inst_type):
     subprocess.Popen(sfup_com, shell = True)
     print("start_filter.sh uploaded\n\n")
 
-
-    # Wait until the server is fully initialized for an ssh connection.
-
-    # while True:
-    #     print("Waiting 5 Seconds before checking if instance ready")
-    #     time.sleep(5) 
-    #     check_com = "aws ec2 describe-instances --instance-ids {} --output table".format(inst_id)
-    #     check_proc = subprocess.Popen(launch_com, stdout = subprocess.PIPE, 
-    #     shell = True)
-    #     info = json.loads((check_proc.stdout.read()).decode("utf-8"))
-
-
     # Give the ssh command to the user
-    # print("Use the following command to connect to instance:\n")
-    # print("ssh -i ~/cslab.pem ec2-user@{}".format(dns))
+    print("Use the following command to connect to instance:\n\n")
+    print("ssh -i ~/cslab.pem ec2-user@{}".format(dns))
 
 
 if __name__ == "__main__":
