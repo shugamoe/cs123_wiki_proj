@@ -28,7 +28,7 @@ def launch_filter_node(inst_type):
     inst_id = prelim_info['Instances'][0]['InstanceId']
     print("Launched {} EC2 Instance with ID: {}\n\n".format(inst_type, inst_id))
 
-    print("Waiting 40 seconds (instance spooling up).\n")
+    print("Waiting 120 seconds (instance spooling up).\n")
     time.sleep(120) # Wait for instance to to spool up
     print("Sleeping Completed, will now retrieve public DNS\n\n")
 
