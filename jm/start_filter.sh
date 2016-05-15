@@ -7,6 +7,7 @@ if [ $1 = "r" ]
     ./enonly.sh r
 else
     ./enonly.sh
+fi
 
 
 

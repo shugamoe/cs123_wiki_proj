@@ -1,7 +1,7 @@
 #!/bin/bash 
 
-read -p "Enter Key" KEY 
-read -p "Enter Secret Key" SKEY
+read -p "Enter Key: " KEY 
+read -p "Enter Secret Key: " SKEY
 
 sudo yum -y groupinstall "Development Tools"
 sudo yum -y install fuse fuse-devel autoconf automake curl-devel libxml2-devel openssl-devel mailcap
