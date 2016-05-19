@@ -22,13 +22,10 @@ void* producer(void* unused) {
         /* produce something */
         /* append it to a list */
         pthread_mutex_lock(&m);
-        // printf("Locked_p\n");
         c++;
         printf("+1");
         pthread_cond_signal(&cond_var);
-        // printf("Signal Sent\n");
         pthread_mutex_unlock(&m);
-        // printf("Unlocked_p\n");
     }
     pthread_mutex_lock(&m);
     done = true; 
