@@ -110,7 +110,8 @@ HYPOTHESES
 
         link_traf = B_0 + (B_1)*H_1_traf + ... + (B_i)*H_i_traf +
                     (B_(i+1))*(Bytes Ratio 1 * H_1_traf) + ... 
-                    + (B_(2i))*(Bytes Ratio i * H_i_traf) + Error
+                    + (B_(2i))*(Bytes Ratio i * H_i_traf) + 
+                    (B_(2i_1))*link_bytes + Error
 
         In this case we would be interested in all Betas with subscripts greater
         than 0.  With this linear regression we can test some large scale
