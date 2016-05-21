@@ -78,7 +78,10 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
     # Convert dictionary to something pandas can easily make a dataframe with.
     for col_name, tuples in csv_dict.items():
         dates, values = zip(*tuples)
-        if not dates_sorted:
+        if mpage in col_name:
+            # Because mrjob only gathers data on inlinks only if it has data on
+            # the page of interest, the dates associated with information on
+            # our page of interest can serve as a master date list.
             master_dates = list(dates)
             master_dates.sort() # Order the dates
             dates_sorted = True # Show we have a master list of sorted dates
