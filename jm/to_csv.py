@@ -13,14 +13,20 @@ import pandas as pd
 import os
 
 
-
-
-def convert(files_path = os.getcwd()):
+def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
     '''
     Reads the contents of mrjob output files into a dictionary, which is then
     turned into a pandas data frame (we utilize some useful built in indexing
     and sorting functions), and then lastly we write this data frame to a CSV.
+
+    The way the mrjob is written, we will write all relevant output files 
+    to a containing folder.
+
+    Inputs:
+        <str> files_path: The path of the directory containing the output files
+                          we would like to convert.
     '''
+    homedir = os.getcwd()
     # Change the current working directory to the path of the files we want to
     # convert to a CSV.
     os.chdir(files_path) 
@@ -72,7 +78,10 @@ def convert(files_path = os.getcwd()):
     # Convert dictionary to something pandas can easily make a dataframe with.
     for col_name, tuples in csv_dict.items():
         dates, values = zip(*tuples)
-        if not dates_sorted:
+        if mpage in col_name:
+            # Because mrjob only gathers data on inlinks only if it has data on
+            # the page of interest, the dates associated with information on
+            # our page of interest can serve as a master date list.
             master_dates = list(dates)
             master_dates.sort() # Order the dates
             dates_sorted = True # Show we have a master list of sorted dates
@@ -88,7 +97,10 @@ def convert(files_path = os.getcwd()):
     dend_str = master_dates[-1].replace('/', '')
 
     # Write the CSV
-    csv_df.to_csv('{}_{}-{}.csv'.format(mpage, dstart_str, dend_str), sep='\t')
+    csv_df.to_csv(name.format(mpage, dstart_str, dend_str), sep='\t')
+
+    # Change back to current directory (makes shell testing easier).
+    os.chdir(homedir) 
 
 
 
