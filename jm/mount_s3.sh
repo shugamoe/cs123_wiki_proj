@@ -1,4 +1,9 @@
 #!/bin/bash 
+# This is a quick script utilizing the commands present on the cheatsheet from 
+# on the class website to quickly mount our S3 Bucket to an instance.
+#
+# This was utilized in the ad-hoc cluster utilized to filter non-English 
+# entries in the data.  See "filter_node.py".
 
 read -p "Enter Key: " KEY 
 read -p "Enter Secret Key: " SKEY

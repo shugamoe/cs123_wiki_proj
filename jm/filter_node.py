@@ -1,5 +1,13 @@
+# Julian McClellan
+#
+# CS 123 Wikpedia Big Data Project
+#
 # Python Script to create nodes that will filter out lines in our traffic 
 # data not beginning with "en" over a certain date range.
+#
+# This function is the building block for an ad-hoc cluster of sorts.  
+# Ended up filtering the data from 2.5TB to 660GB by running this function in
+# 20 different terminal windows.  
 
 import sys 
 import subprocess
@@ -16,6 +24,11 @@ def launch_filter_node(inst_type):
 
     The function launches the instance, uploads the necessary bash scripts to
     the instance, and then connects to the instance via ssh. 
+
+    Inputs:
+        <str> inst_type: The type of AWS instance we want to utilize.
+    Outputs:
+        None
     '''
     # Launch EC2 Instance
     launch_com = "aws ec2 run-instances --image-id ami-f5f41398 --count 1 \
