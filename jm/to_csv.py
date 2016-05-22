@@ -11,6 +11,7 @@
 from pathlib import Path
 import pandas as pd
 import os
+import json
 
 
 def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
@@ -72,6 +73,11 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
                         (date, views))
                     csv_dict.setdefault('bratio_{}'.format(page), []).append(
                         (date, bratio))
+                    
+    # Manual inspection of dictionary prior to pandas friendly conversion.                
+    if test:
+        with open('test.json', 'w') as f:
+            json.dump(csv_dict, f)
 
     dates_sorted = False
 
@@ -101,9 +107,3 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
 
     # Change back to current directory (makes shell testing easier).
     os.chdir(homedir) 
-
-
-
-
-
-
