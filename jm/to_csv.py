@@ -98,7 +98,12 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv', test =
     # the sorted list of all the dates appearing in the files.  
     # This ensures that even though information about column values might have
     # been received out of order, it will appear in order within the dataframe.
-    csv_df = pd.DataFrame(csv_dict, index = master_dates)
+    try:
+        csv_df = pd.DataFrame(csv_dict, index = master_dates)
+    except ValueError:
+        os.chdir(homedir) # So I can more easily rerun the file after the error
+        raise
+
 
     dstart_str = master_dates[0].replace('/', '')
     dend_str = master_dates[-1].replace('/', '')
