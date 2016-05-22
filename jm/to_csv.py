@@ -14,7 +14,8 @@ import os
 import json
 
 
-def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
+def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv', test = 
+    False):
     '''
     Reads the contents of mrjob output files into a dictionary, which is then
     turned into a pandas data frame (we utilize some useful built in indexing
@@ -73,7 +74,7 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv'):
                         (date, views))
                     csv_dict.setdefault('bratio_{}'.format(page), []).append(
                         (date, bratio))
-                    
+
     # Manual inspection of dictionary prior to pandas friendly conversion.                
     if test:
         with open('test.json', 'w') as f:
