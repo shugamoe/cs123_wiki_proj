@@ -18,6 +18,7 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r, message = False}
 # Read in CSV data
 test = read.csv('Airsoft_guns/Airsoft_guns_2009082623-2009082823.csv', sep = '\t', row.names = 1)
+lower_man = read.csv('Lower_Manhattan/', sep = '\t', row.names = 1)
 ```
 
 ## Including Plots

@@ -45,7 +45,7 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv', test =
     # column in the dataframe.
     csv_dict = {}
 
-    # Get filepaths of all mrjob outputs
+    # Get filepaths of all mrjob mrjob_outputs
     mrjob_outputs = [pth.as_posix() for pth in Path.cwd().iterdir() if 'part-' 
     in pth.stem]
 
@@ -85,6 +85,19 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}.csv', test =
     # Convert dictionary to something pandas can easily make a dataframe with.
     for col_name, tuples in csv_dict.items():
         dates, values = zip(*tuples)
+        dates = list(dates)
+        values = list(values)
+
+        # Code to detect, report and handle 
+        dupes = set([x for x in dates if dates.count(x) > 1])
+        if len(dupes) != 0:
+            print('The following dates contain multiple entries:\t{}\t data:{}'.format(dupes, col_name))
+            for date in dupes:
+                while dates.count(date) > 1:
+                    ind = dates.index(date)
+                    del dates[ind]
+                    del values[ind]
+
         if mpage in col_name:
             # Because mrjob only gathers data on inlinks only if it has data on
             # the page of interest, the dates associated with information on
