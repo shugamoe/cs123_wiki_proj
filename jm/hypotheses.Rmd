@@ -1,16 +1,18 @@
 ---
-title: 'CS123 Wikipedia Project: Hypotheses'
+title: 'CS123 Wikipedia Project: Data and Hypothesis'
 author: "Julian McClellan, Bobby Adsumilli, Andy Zhu"
 date: "May 21, 2016"
 output:
-  word_document:
-    toc: yes
+  pdf_document:
+    toc: no
   html_document:
     keep_md: yes
     toc: yes
+  word_document:
+    toc: yes
 ---
 
-# Files
+# Data Files
 
 ## wikidata/wikistats (650G)
 
@@ -53,33 +55,58 @@ to11 to12 to13 ... are integers labelling all the pages that the page links to. 
 
 ## File summary:
 
-*pagecounts-<date and time>.gz*
-    -Contains n lines with 4 fields: projectcode (we want "en" only!), pagename,
-                                     pageviews, and bytes
-    -Dates range from 10/01/2008 to 02/06/2010
-*links-simple-sorted.txt*
-    -Contains all links between proper english language wikipedia pages.
+*pagecounts-<date and time>.gz*  
+* Contains n lines with 4 fields: projectcode (we want "en" only!), pagename,                     pageviews, and bytes  
+* Dates range from 10/01/2008 to 02/06/2010  
 
-*titles-sorted.txt*
-    -Contains the names of all English Language Wikipedia pages.
+*links-simple-sorted.txt*  
+* Contains all links between proper english language wikipedia pages.
+
+*titles-sorted.txt*  
+* Contains the names of all English Language Wikipedia pages.
     
-# Hypotheses
+# Hypothesis
 
 ## We will attempt to quantify the relationship between pages and inlinks to these pages.
 
-   e.g. Imagine the simplest case.  A  page only has one inlink, IL. 
-        Let's assume a linear model for the traffic of these three links as:
+Imagine the simplest case.  A  page only has one inlink, IL. We propose a linear model for the traffic of that page as:
         
-        $traf\;page_t = \beta_{0} + \beta_{1}traf\;IL_i+\beta_{2}(bratio_{IL}_{t}*traf\;IL_i) + \epsilon_{t}$  
-        
-        Where $bratio_{IL}_{t}=\frac{bytes_IL_{t}}{bytes_page}$  
-        
-        We would be interested in the coefficients $\beta_{1}$ and $\beta_{2}$. Notice that we do not account for the main effects of           the Bytes Ratio, this is because we will assume that the Bytes  does not have an effect on link traffic that is independent of 
-        the inlink traffic.  
-        
-        Say a page has i inlinks $(2\leq i<\infty)$, then the model generalizes to:  
-        
-        $$
+$traf\_page_{t}=\beta_{0}+\beta_{1}traf\_IL_{t}+\beta_{2}bratio\_IL{}_{t}+\beta_{3}bytes\_page_{t}\epsilon_{t}$ 
+
+Where $bratio\_IL{}_{t}=\frac{bytes\_IL_{t}}{bytes\_page_{t}}$.  That is, the bytes ratio is the ratio of the page size in bytes, of the inlink IL to the page.  
+
+We would be most interested in the coefficients $\beta_{1}$ and $\beta_{2}$.  Respectively, these can be interpreted as the change in page traffic when the inlink traffic increases by one unit holding the bytes ratio constant ($\beta_{1}$) and vice versa ($\beta_{2}$).  
+
+However, we do not simply believe that the traffic of a page is a function of the attributes related to the link (or links) to that page.  Given the low dimensions of our data set we use the predictor bytes_page, the size of the page in bytes as an "internal" cause of the traffic to that page.  Bytes can be thought of as a direct way to measure the amount of content the page contains.  
+
+Once the actual data has been more thoroughly explored, we might be inclined to introduce an interaction term between the bytes ratio and inlink traffic.  Doing so complicates a simple explanation of what the regression coefficients mean, but suffice to say, a statistically significant interaction term means that the effect on page traffic that the traffic to the inlink IL has depends on the value of the bytes ratio.
+
+***
+Now, to generalize the model, say a page has $i$ inlinks $(2\leq i<\infty)$, then the model generalizes to:  
+
+<center>$traf\;page_{t}=\beta_{0}+\beta_{1}traf\_1+...+\beta_{i}(traf\_i)+\beta_{i+1}bratio\_1+...+\beta_{2i}bratio\_i+\beta_{2i+1}bytes\_page+\epsilon_{t}$</center>
+
+
+In this case, we would be interested in all $\beta$'s with subscripts greater than 0.  With this linear regression we can test a number of hypotheses:  
+
+Does the traffic from each inlink affect the page traffic in the same way?
+
+Null | $\beta_{1}=\beta_{2}=...=\beta_{i}$
+
+Do the bytes ratios have any effect on page traffic?  
+Null | $\beta_{i+1}=\beta_{i+2}=...=\beta_{2i}=0$
+
+Do the bytes ratios all have the same effect?
+
+Null | $\beta_{i+1}=\beta_{i+2}=...=\beta_{2i}$
+
+etc.  
+
+
+
+
+      
+      
 
 
 
