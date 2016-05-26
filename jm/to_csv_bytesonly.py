@@ -7,6 +7,11 @@
 # constructing linear models.
 #
 # Necessary because having mrjob output to CSV in the manner we want is hard.
+# 
+# This specific version is built to manually calculate bytes ratios, it turns
+# out writing temporary files to store information when running an mrjob on s3 
+# is a pain.  It would be nice to figure out, but this version of the function
+# can calculate bytes ratios for us without having to get into the s3 hassle.
 
 from pathlib import Path
 import pandas as pd
@@ -29,7 +34,7 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
     Inputs:
         <str> files_path: The path of the directory containing the output files
                           we would like to convert.
-        <str> name: The name one would like to give to the file.  
+        <str> name: The name one would like to give to the file.
     '''
     homedir = os.getcwd()
     # Change the current working directory to the path of the files we want to
@@ -57,7 +62,7 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
         with open(part) as f:
             for line in f:
                 entry = line.strip().strip('"').split(DIVIDER)
-                page, date, views, bratio = entry[0], entry[1], entry[2], \
+                page, date, views, bytes = entry[0], entry[1], entry[2], \
                 entry[3]
 
                 # If we happen upon our main page (whose traffic is the 
@@ -67,23 +72,31 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
                 # We will use special formatting to indicate in our dictionary
                 # that certain data pertains to our main page.
                 if page == mpage:
-                    mpage_bytes = entry[4]
                     csv_dict.setdefault('<bytes_{}>'.format(page), []).append(
-                        (date, mpage_bytes))
+                        (date, bytes))
                     csv_dict.setdefault('<traf_{}>'.format(page), []).append(
                         (date, views))
                 else:
                     csv_dict.setdefault('traf_{}'.format(page), []).append(
                         (date, views))
+                    # We will calculate the bytes ratio later later.
                     csv_dict.setdefault('bratio_{}'.format(page), []).append(
-                        (date, bratio))
+                        (date, bytes))
 
-    # Manual inspection of dictionary prior to pandas friendly conversion.                
+    # Enable manual inspection of dictionary prior to pandas friendly 
+    # conversion.                
     if test:
         with open('test.json', 'w') as f:
             json.dump(csv_dict, f)
 
-    dates_sorted = False
+    # Extract the bytes values from the page of interest so we can calculate
+    # bytes ratios.  
+    pdates, pbytes = zip(*csv_dict['<bytes_{}>'.format(mpage)])
+
+    # The dates associated with our page of interest are our master dates 
+    # (master indices) for the data frame. 
+    master_dates = list(pdates)
+    master_dates.sort()
 
     # Convert dictionary to something pandas can easily make a dataframe with.
     for col_name, tuples in csv_dict.items():
@@ -91,10 +104,10 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
         dates = list(dates)
         values = list(values)
 
-        # Code to detect, report and handle 
+        # Code to detect, report and handle duplicate dates.
         dupes = set([x for x in dates if dates.count(x) > 1])
         if len(dupes) != 0:
-            print('The following dates contain multiple entries:\t{}\t data:'
+            print('The following dates contain multiple entries:\t{}\tdata:'
                 '{}'.format(dupes, col_name))
             for date in dupes:
                 while dates.count(date) > 1:
@@ -102,13 +115,11 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
                     del dates[ind]
                     del values[ind]
 
-        if mpage in col_name:
-            # Because mrjob only gathers data on inlinks only if it has data on
-            # the page of interest, the dates associated with information on
-            # our page of interest can serve as a master date list.
-            master_dates = dates
-            master_dates.sort() # Order the dates
-            dates_sorted = True # Show we have a master list of sorted dates
+        # If we find a bytes ratio column, we have to calculate the ratios.
+        if 'bratio' in col_name:
+            for index, bytes in enumerate(values):
+                values[index] = bytes / pbytes[pdates.index(dates[index])]
+
         csv_dict[col_name] = pd.Series(list(values), index = list(dates))
 
     # Create the dataframe.  The we set the index parameter to master_dates,
