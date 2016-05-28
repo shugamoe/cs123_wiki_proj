@@ -1,6 +1,4 @@
 import pandas as pd
-# import numpy as np 
-# import matplotlib.pyplot as plt
 import json
 
 
@@ -41,32 +39,71 @@ def wiki_homepages(pagename, json_file, titles_file):
     return homepage_titles
 
 
-def one_to_five_inlinks_dump(json_file, titles_file):
-    titles = pd.read_csv(titles_file, delimiter = ' ', names = ['page title'])
+def one_to_five_inlinks_dump(json_file):
+    '''
+    Generates a dict of pages with one to five inlinks (pages that link to 
+    pagename) of a page, and dumps it to a json file named 'one_to_five_inlinks'.
+    Inputs:
+        json_file - file of the json containing the line numbers of 
+                    pages and their inlinks
+    '''
 
     one_to_five_dict = {}
     with open(json_file, 'r') as f:
-        count = 1
         for key, val in json.load(f).items():
-            if len(val) == 2:
-                key_name = titles.iloc[[int(key) - 1]].values[0][0]
-                for v in val:
-                    val_name = titles.iloc[[int(v) - 1]].values[0][0]
-                    one_to_five_dict[key_name] = one_to_five_dict.get(key_name, 
-                        []) + [val_name]
-            count += 1
-            if count % 1000 == 0:
-                print(count)
+            # if the pagename contains one to five inlinks, append to dict
+            if len(val) >= 1 and len(val) <= 5: 
+                one_to_five_dict[key] = val
+
 
     with open('one_to_five_inlinks', 'w') as f:
         json.dump(one_to_five_dict, f)
 
 
-def two_inlinks_sample(json_file_one_to_five):
+def one_to_five_inlinks(json_file, titles_file, num_of_inlinks, num_of_pages):
+    '''
+    Generates a dict of num_of_pages pages with num_of_inlinks inlinks by 
+    loading json_file (a dict containing all pages with one to five inlinks), 
+    filtering through, and appending suitable items into the dict inlinks_sample.
+    Inputs:
+        json_file - file of the json containing the line numbers of 
+                    pages and their inlinks
+        titles_file - file containing pagenames of each number in json_file
+        num_of_inlinks - parameter determining the number of inlinks for each 
+                         page
+        num_of_pages - parameter determining the number of pages needed
+    Output:
+        inlinks_sample dictionary
+
+    '''
+    titles = pd.read_csv(titles_file, delimiter = ' ', names = ['page title'])
+    inlinks_sample = {}
+
+    with open(json_file, 'r') as f:
+        count = 0
+        for key, val in json.load(f).items():
+            if len(val) == num_of_inlinks:
+                # convert key from line number (int) to pagename (str)
+                key_name = titles.iloc[[int(key) - 1]].values[0][0]
+                # convert each value from line number (int) to pagename (str)
+                for v in val: 
+                    val_name = titles.iloc[[int(v) - 1]].values[0][0]
+                    inlinks_sample[key_name] = inlinks_sample.get(key_name, \
+                        []) + [val_name]
+                count += 1
+
+            if count == num_of_pages:
+                return inlinks_sample 
+
+    print('there are only {:} pages', count)
+    return inlinks_sample       
+
+
+def two_inlinks_sample(json_file_two):
     
     two_inlinks_sample = {}
 
-    with open(json_file_one_to_five, 'r') as f:
+    with open(json_file_two, 'r') as f:
         inlinks_dict = json.load(f)
 
     two_inlinks_sample['Wrestling_Slang'] = inlinks_dict['Wrestling_Slang']
