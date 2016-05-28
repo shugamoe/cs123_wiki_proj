@@ -19,6 +19,7 @@ import os
 import json
 from inlinks import two_inlinks_sample
 import sys
+from testing import create_relevant
 
 DIVIDER = '   '
 
@@ -41,7 +42,7 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
         <bool> combined: A boolean indicating whether or not the user would
                          like to create only one combined CSV file.
         <bool> test: A boolean  indicating whether or not the user would like
-                     to output an intermediate JSON file to manually inspect 
+                     to output intermediate JSON files to manually inspect 
                      some results.
     Outputs:
         None: Either writes one or several CSV files. 
@@ -80,6 +81,8 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
     # Parse each file, adding the information contained within each entry to 
     # the appropriate dictionary within csv_dicts.
     for part in mrjob_outputs:
+        # Scrubs extraneous data from output.
+        create_relevant(part)
         with open(part) as f:
             for line in f:
                 entry = line.strip().strip('"').split(DIVIDER)
@@ -109,7 +112,7 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
     # Enable manual inspection of dictionary prior to pandas friendly 
     # conversion.                
     if test:
-        with open('test.json', 'w') as f:
+        with open('rawdict.json', 'w') as f:
             json.dump(csv_dicts, f)
     
     if combined:
@@ -122,7 +125,7 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
 
     for mpage in csv_dicts:
          loc_min_date, loc_max_date, df = dict_to_df(mpage, csv_dicts[mpage], 
-            homedir)
+            homedir, combined, test)
          if combined:
             comb_min_date = min(loc_min_date, comb_min_date)
             comb_max_date = max(loc_max_date, comb_max_date)
@@ -131,14 +134,15 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
 
     if combined:
         combined_df = pd.concat(data_frames)
-        combined_df.to_csv('')
+        combined_df.to_csv('combined_{}-{}.csv'.format(comb_min_date, 
+            comb_max_date))
 
     # Change back to current directory when finished 
     # (makes shell testing easier).
     os.chdir(homedir)
 
 
-def dict_to_df(mpage, info_dict, homedir, uniform = False):
+def dict_to_df(mpage, info_dict, homedir, combined = False, test = False):
     '''
     Creates a df that containing all relevant information about mpage, the 
     current page of interest.
@@ -152,6 +156,14 @@ def dict_to_df(mpage, info_dict, homedir, uniform = False):
         <str> homedir: String that contains the filepath of this Python file
                        if we encounter issues we revert to this as our working
                        directory.
+        <bool> combined: A boolean indicating whether or not the user would
+                         like to create only one combined CSV file.  In this
+                         function this argument is simply passed to the 
+                         convert_dict function.
+        <bool> test: A boolean  indicating whether or not the user would like
+                     to output intermediate JSON files to manually inspect 
+                     some results.
+
     Outputs:
         <str> loc_min_date: A string indicating the lowest valued date seen in
                             the info_dict.
@@ -159,7 +171,7 @@ def dict_to_df(mpage, info_dict, homedir, uniform = False):
                             the info_dict.
         <pd df> df: A pandas dataframe created from the info_dict.  
     '''
-    convert_dict(mpage, info_dict)
+    convert_dict(mpage, info_dict, combined, test)
 
     # Create the dataframe.  The we set the index parameter to master_dates,
     # the sorted list of all the dates appearing in the files.  
@@ -182,7 +194,7 @@ def dict_to_df(mpage, info_dict, homedir, uniform = False):
 
 
 
-def convert_dict(mpage, info_dict, uniform = False):
+def convert_dict(mpage, info_dict, combined = False, test = False):
     '''
     This function takes the raw dictionary created from parsing the mrjob 
     output and converts it the values in the dictionary to a pandas series.  
@@ -196,6 +208,15 @@ def convert_dict(mpage, info_dict, uniform = False):
     Inputs:
         <str> mpage: The name of our page of interest, whose traffic is the 
                      response variable in our regression.
+        <dict> info_dict: A dictionary containing the raw information skimmed
+                          from the mrjob output.
+        <bool> combined: A boolean indicating whether or not the user would
+                         like to create only one combined CSV file.  If true,
+                         this function will give the keys of the dictionary a
+                         uniform appearance.  
+        <bool> test: A boolean  indicating whether or not the user would like
+                     to output intermediate JSON files to manually inspect 
+                     some results.
 
     '''
     # Extract the bytes values from the page of interest so we can calculate
@@ -227,16 +248,17 @@ def convert_dict(mpage, info_dict, uniform = False):
         # If we find a bytes ratio column, we have to calculate the ratios.
         if 'bratio' in col_name:
             for index, bytes in enumerate(values):
-                values[index] = bytes / pbytes[pdates.index(dates[index])]
+                values[index] = int(bytes) / int(pbytes[pdates.index(
+                    dates[index])])
 
         # Replace the value in the dictionary with a pandas Series to enable
         # easy creation of a dataframe later.
-        csv_dict[col_name] = pd.Series(list(values), index = list(dates))
+        info_dict[col_name] = pd.Series(list(values), index = list(dates))
 
-    # If uniform bool is true, we provide a general naming scheme that enables
+    # If combined bool is true, we provide a general naming scheme that enables
     # us to combine multiple dataframes concerning pages with the same number
     # of inlinks.
-    if uniform:
+    if combined:
         for col_name in info_dict:
             if mpage in col_name:
                 if 'bytes' in col_name:
@@ -256,6 +278,12 @@ def convert_dict(mpage, info_dict, uniform = False):
                 else:
                     print("Investigate the following entry for page {}"
                         .format(mpage))
+    # Enable manual inspection of dictionary prior to pandas friendly 
+    # conversion.                
+    if test:
+        with open('convert_dict.json', 'w') as f:
+            json.dump(info_dict, f)
+    
 
 
 def run(link_json_path, mrjob_output_path, combined = False, test = False):
