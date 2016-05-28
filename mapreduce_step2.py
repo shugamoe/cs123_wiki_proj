@@ -1,14 +1,6 @@
-# To exit VIM: Esc + :q!
-
-# To run code. If 'mrjob_output' folder already exists, it gets overwritten. Data is mrjob_input (folder). With passthrough options: 
+# To run code on local machine. If 'mrjob_output' folder already exists, it gets overwritten.
 # python3 mapreduce_step2.py -o "Lower_Manhattan" --homepage="Lower_Manhattan" --link=links.txt --title=titles-sorted.txt --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output 
-# python3 mapreduce_step2.py -o json_files/"Lower_Manhattan" --homepage="Lower_Manhattan" --link=inlinks_files/links --title=inlinks_files/titles-sorted.txt --no-output --jobconf mapreduce.job.reduces=1 oct2008_en 
 
-# To run code on all files in a bucket in EMR, running on 1 computer: 
-# python mr_wordcount.py --num-ec2-instances=1 --python-archive package.tar.gz -r emr -o 's3://dataiap-bobbyadusumilli-testbucket/output' --no-output 's3://dataiap-wikipedia/*'
-
-# Really good for AWS Map Reduce: https://dataiap.github.io/dataiap/day5/mapreduce
-# MRJob documentation: https://media.readthedocs.org/pdf/mrjob/latest/mrjob.pdf
 
 import mrjob
 from mrjob.job import MRJob
@@ -17,7 +9,6 @@ import urllib.parse
 import json
 import os
 import pandas as pd
-import optparse
 
 def wiki_homepages(pagename, json_file, titles_file):
 	'''
@@ -62,7 +53,9 @@ class PageName(MRJob):
 	with one Wikipedia page of interest, and retrieve the pagename, datetime, 
 	pageviews, and bytes ratio (bytes_linked_page / bytes_interest_page) for 
 	each datetime. This information is relevant to perform the regression 
-	analyses. 
+	analyses. This MRJob is best run on the local machine, as it creates a 
+	JSON file that is most easily manipulated on the local machine, which is 
+	used to calculate the bytes ratio for each page. 
 
 	PageName takes in output files from mapreduce_step1.py, meaning txt files
 	with all potentially relevant English Wikipedia pagenames, datetimes, 
@@ -85,7 +78,6 @@ class PageName(MRJob):
 		self.add_passthrough_option('--homepage', type='str')
 		self.add_file_option('--link')
 		self.add_file_option('--title')
-		# self.add_passthrough_option('--hour', type='str')
 
 
 	def mapper_init_first(self): 
@@ -104,7 +96,6 @@ class PageName(MRJob):
 		# Calling helper to determine the pagenames linked to interest pagename
 		self.interest = wiki_homepages(self.page_of_interest, str(self.links), str(self.titles))
 		print(self.interest)
-		# self.hour = self.options.hour
 
 
 	def mapper_first(self, _, line):
@@ -124,8 +115,6 @@ class PageName(MRJob):
 		# fields = [pagename, datestring, pageviews, bytes]
 		fields = line.split("   ")
 		# fields[0] looks like: "pagename 		need to get rid of quotation mark
-		# pagename is often percent encoded, so need to remove this encoding
-		# title = urllib.parse.unquote_plus(fields[0])[1:]
 		title = fields[0][1:]
 
 		# Conditional if pagename is a link to page of interest

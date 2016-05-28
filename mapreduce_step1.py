@@ -1,23 +1,13 @@
 # To run code and save output of reducers to plain text documents: 
-# If 'mrjob_output' folder already exists, it gets overwritten
 
+# On local machine: If 'mrjob_output' folder already exists, it gets overwritten
+# python3 mapreduce_step1.py -o 'mrjob_20081019_2nd' --no-output mrjob_input
 
-# python3 mapreduce_step1.py -o 'mrjob_20081008_1st' --no-output mrjob_input
-
-# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week3/oct15_16/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week3_Step1/oct15_16_step1/ --no-output
-
-
-# python3 mapreduce_step1.py -r emr -o s3://wikitrafv2big/oct2008_test_step1/ s3://wikitrafv2big/oct2008_test/
-# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_test/ > entries.txt
-
-# To run code on all files in a bucket in EMR, running on 1 computer: 
-# python mr_wordcount.py --num-ec2-instances=1 --python-archive package.tar.gz -r emr -o 's3://dataiap-bobbyadusumilli-testbucket/output' --no-output 's3://dataiap-wikipedia/*'
+# Using AWS: 
+# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week4/oct29_30/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --no-output
 
 # Really good for AWS Map Reduce: https://dataiap.github.io/dataiap/day5/mapreduce
 # MRJob documentation: https://media.readthedocs.org/pdf/mrjob/latest/mrjob.pdf
-
-# Input looks like "en Barack_Obama 997 123091092"							language pagename pageviews bytes
-# Output looks like "Barack_Obama   2009/08/26/23   997   123091092 "		pagename   datetime   pageviews   bytes
 
 import mrjob
 from mrjob.job import MRJob
@@ -30,8 +20,14 @@ import urllib.parse
 class RelevantEntries(MRJob):
 	'''
 	Class using MRJob to determine the relevant English Wikipedia pages and 
-	the total views and bytes for each hour for each page. Takes in filenames
-	such as "pagecounts-20081001-060000"
+	the total views and bytes for each hour for each page. Takes in lines 
+	from filenames such as "pagecounts-20081001-060000"
+
+	Input looks like: "en Barack_Obama 997 123091092" 
+	Format: "language pagename pageviews bytes"
+
+	Output looks like: "Barack_Obama   2009/08/26/23   997   123091092 "		
+	Format: "pagename   datetime   pageviews   bytes"
 	'''
 	# To not display null values in the final output
 	OUTPUT_PROTOCOL = mrjob.protocol.JSONValueProtocol
@@ -40,7 +36,8 @@ class RelevantEntries(MRJob):
 		'''
 		Input to remove pagenames that do not have inlinks associated with them. 
 		For example, images cannot lead to other links in Wikipedia, so any 
-		pagename starting with "image:" can be removed. 
+		pagename starting with "image:" can be removed. Also remove percent
+		encoding from pagenames
 
 		Relevant Output: 
 			self.remove: string of beginnings of pagenames signifying which 
@@ -55,8 +52,8 @@ class RelevantEntries(MRJob):
 
 	def mapper(self, _, line):
 		'''
-		Starter function that will take each line of the space-separated 
-		file and yield each English Wikipedia page's name, number of bytes,
+		Mapper function that will take each line of the space-separated 
+		file and yield each English Wikipedia page's name, number of bytes, 
 		relevant hour, and total views for that page in that hour. Only should
 		yield relevant pagenames that can have inlinks. 
 
@@ -65,8 +62,8 @@ class RelevantEntries(MRJob):
 			"language pagename pageviews bytes"
 
 		Outputs: 
-			Relevant English Wikipedia page name, datetime, and bytes
-			Total views of that Wikipedia page
+			Relevant English Wikipedia page name and datetime
+			List of total views and bytes of that Wikipedia page
 		'''
 		# fields = ["en", pagename, pageviews, bytes]
 		fields = line.split(" ")
@@ -77,17 +74,22 @@ class RelevantEntries(MRJob):
 
 		title = urllib.parse.unquote_plus(fields[1])
 		
+		# Sometimes percent encoding needs greater than 1 time to remove
 		x = 0
+		# Chose 10 to ensure percent encodings disappear
 		while "%" in title: 
 			if x == 10:
 				break
+			# command to remove percent encodings
 			title = urllib.parse.unquote_plus(title) 
 			x += 1
 
 		if re.findall(self.remove, title.lower()) == []:
-			# output is: "pagename   datetime", [pageviews, bytes]
 
+			# Sometimes data is corrupted
 			try: 
+				# Sometimes for title and datetime, there are numerous entries. 
+				# output is: "pagename   datetime", [pageviews, bytes]
 				yield title + "   " + date, [int(fields[2]), int(fields[3])]
 
 			except: 
@@ -100,8 +102,9 @@ class RelevantEntries(MRJob):
 		Wikipedia pagename, so we sum the pageviews and bytes
 
 		Inputs: 
-			pagename: Wikipedia pagename, relevant datetime, and bytes
-			views: pseudo-list of number of views of Wikipedia page 
+			pagename: Wikipedia pagename and relevant datetime
+			views: pseudo-list of number of views and bytes of Wikipedia 
+				page 
 
 		Outputs: 
 			String of relevant English Wikipedia page name and datetime
@@ -125,40 +128,13 @@ class RelevantEntries(MRJob):
 		inlinks. String also includes datetime, bytes, and pageviews. 
 
 		Inputs: 
-			pagename: String of Wikipedia pagename, datetime, and bytes
-			views: pseudo-list of number of views of Wikipedia pages 
+			pagename: String of Wikipedia pagename and datetime
+			views: pseudo-list of number of views and bytes of page 
 
 		Outputs: 
 			String of relevant English Wikipedia page name, datetime, bytes, 
 			and pageviews. Output is of form: 
 			"pagename   datetime   pageviews   bytes"
-
-		definitely get rid of: 
-		image:
-		special: 
-		user:
-		user_talk: 
-		wiki/
-		#
-		image_talk:
-		w/index
-		category:
-		category_talk: 
-		portal: 
-		wikipedia: 
-		talk: 
-		template: 
-		wikibooks: 
-		wikipedia_talk: 
-		?title=
-		?search=
-		template_talk: 
-		help: 
-		help_talk:
-		wikiquote:
-		wiktionary:
-		wikisource:
-		category%3a
 		'''
 		page_numbers = numbers
 		pageviews = 0
