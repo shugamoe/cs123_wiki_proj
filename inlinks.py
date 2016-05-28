@@ -80,6 +80,16 @@ def two_inlinks_sample(json_file_one_to_five):
     return two_inlinks_sample
 
 
+def two_inlinks(json_file_one_to_five):
+    
+    two_inlinks_sample = {}
+
+    with open(json_file_one_to_five, 'r') as f:
+        inlinks_dict = json.load(f)
+
+    return inlinks_dict
+
+
 
 
 
