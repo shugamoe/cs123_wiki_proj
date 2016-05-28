@@ -1,5 +1,6 @@
 import json
-# from pathLib import Path
+from pathlib import Path
+import os
 
 
 def two_inlinks_sample(json_file_one_to_five):
@@ -24,72 +25,100 @@ def two_inlinks_sample(json_file_one_to_five):
     return two_inlinks_sample
 
 
-def create_relevant(file, json_links):
+def scrub_parse_output(files_path, json_path, num_inlinks = None):
     '''
-    file example: 'one-to-five/part-00000'
-    json_links example: 'one_to_five_inlinks.txt'
-
     Function to update file to get the appropriate MRJob data for the 
     regression analysis
 
     This updates the MRJob_Step2 regression output to only include 
     homepage and datetimes that are in the data, and also the the 
     information of the appropriate links
+
+    Inputs:
+        <str> files_path: A string indicating the path of the directory 
+                          containing the mrjob output
+        <str> json_path: A string indicating the path of the json file that 
+                         contains a dictionary whose keys correspond to 
+                         pages of interest and values are a list of inlinks to 
+                         these pages.  All the pages should have the same 
+                         number of inlinks.
+        <int> num_inlinks: The number of inlinks desired for each page.
+                           If we do not see the desired number of inlinks
+                           in the data for a page we will not make a CSV out of
+                           it (incomplete data).  
+    Outputs:
+        <dict> new_inlinks_dict: A dictionary of all the pages and their 
+                                 inlinks that appeared in the mrjob output.
     '''
-
-    # mrjob_outputs = [ptx_as_posix() for pth in Path.cwd().iterDir() if 'part-' in pth.stem]
-
-    # Create a list of all infromation initial MRJob_Step2 output
-    inlinks_mrjob = []
-    with open(file, 'r') as f:
-        for line in f: 
-            inlinks_mrjob.append(line.strip()[1:-1])
+    homedir = os.getcwd()
+    os.chdir(files_path)
 
     # Call function to get all homepages and links of interest
-    inlinks_dict = two_inlinks_sample(json_links)
-    # print(inlinks_dict)
-    # print()
+    inlinks_dict = two_inlinks_sample(json_path)
+    pages_of_int = list(inlinks_dict.keys())
 
-    inlinks_dict_keys = list(inlinks_dict.keys())
-    # print(inlinks_dict_keys)
-    # print()
+    mrjob_outputs = [pth.as_posix() for pth in Path.cwd().iterdir() if 
+    (pth.stem.startswith('part-') and not pth.stem.endswith('-conv'))]
 
-    # Create a dictionary of homepages and datetimes in MRJob_Step2 data
-    keys = {}
-    # Create a list of relevant output for the MRJob_Step2 file
-    final_lines = []
     new_inlinks_dict = {}
 
-    for line in inlinks_mrjob:
-        # fields = [pagename, datetime, pageviews, bytes]
-        fields = line.split('   ')
-        if fields[0] in inlinks_dict_keys:
-            keys[fields[0]] = keys.get(fields[0], []) + [fields[1]]
-            new_inlinks_dict[fields[0]] = new_inlinks_dict.get(fields[0], [])
+    for output_file in mrjob_outputs:
+        # Create a list of all infromation initial MRJob_Step2 output
+        inlinks_mrjob = []
+        with open(output_file, 'r') as f:
+            for line in f:
+                inlinks_mrjob.append(line.strip()[1:-1])
 
-    # print(list(keys.keys()))
+        # Create a dictionary of pages and datetimes in MRJob_Step2 data
+        page_dates = {}
+        # Create a list of relevant output for the MRJob_Step2 file
+        final_lines = []
+        
+        for line in inlinks_mrjob:
+            # fields = [pagename, datetime, pageviews, bytes]
+            page_seen, date, views, bytes = line.split('   ')
+            if page_seen in pages_of_int:
+                page_dates[page_seen] = page_dates.get(page_seen, []) + [date]
+                new_inlinks_dict[page_seen] = new_inlinks_dict.get(page_seen, 
+                    [])
+                # Include relevant links of the homepages
+                final_lines.append(line)
 
-    for line in inlinks_mrjob:
-        # fields = [pagename, datetime, pageviews, bytes]
-        fields = line.split('   ')
+        # print(list(keys.keys()))
 
-        # Include lines of the homepages
-        if fields[0] in keys.keys():
-            final_lines.append(line)
+        for line in inlinks_mrjob:
+            # fields = [pagename, datetime, pageviews, bytes]
+            page_seen, date, views, bytes = line.split('   ')
 
-        # Include relevant links of the homepages
-        else: 
-            for key in keys.keys():
-                if fields[0] in inlinks_dict[key]:
-                    if fields[1] in keys[key]:
-                        final_lines.append(line)
-                        if fields[0] not in new_inlinks_dict[key]:
-                            new_inlinks_dict[key] = new_inlinks_dict[key] + [fields[0]]
-                        break
+            # Handle inlinks.
+            if page_seen not in page_dates.keys():
+                for key in page_dates.keys():
+                    if page_seen in inlinks_dict[key]:
+                        if date in page_dates[key]:
+                            final_lines.append(line)
+                            if page_seen not in new_inlinks_dict[key]:
+                                new_inlinks_dict[key] = new_inlinks_dict[key] \
+                                + [page_seen]
+                            break
 
-    # Overwrite the initial MRJob_Step2 file
-    with open(file, 'w') as f:
-        for line in final_lines: 
-            f.write(line + "\n")
+        # Overwrite the initial MRJob_Step2 file
+        with open(output_file + '-conv', 'w') as f:
+            for line in final_lines: 
+                f.write(line + "\n")
+
+    # Return to starting directory
+    os.chdir(homedir)
+
+
+    # Make sure everything in our new_inlinks_dict has the expected number of 
+    # inlinks
+    if num_inlinks:
+        kill_list = []
+        for page in new_inlinks_dict:
+            if len(new_inlinks_dict[page]) != num_inlinks:
+                kill_list.append(page)
+
+        for page in kill_list:
+            del new_inlinks_dict[page]
 
     return new_inlinks_dict
