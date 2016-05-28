@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import urllib.parse
 
 
 def wiki_homepages(pagename, json_file, titles_file):
@@ -86,9 +87,25 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
             if len(val) == num_of_inlinks:
                 # convert key from line number (int) to pagename (str)
                 key_name = titles.iloc[[int(key) - 1]].values[0][0]
+                
+                title = urllib.parse.unquote_plus(key_name)
+                x = 0
+                while '%' in title:
+                    if x == 10:
+                        break
+                    title = urllib.parse.unquote_plus(title)
+                    x += 1
                 # convert each value from line number (int) to pagename (str)
                 for v in val: 
                     val_name = titles.iloc[[int(v) - 1]].values[0][0]
+                    title = urllib.parse.unquote_plus(val_name)
+                    x = 0
+                    while '%' in title:
+                        if x == 10:
+                            break
+                        title = urllib.parse.unquote_plus(title)
+                        x += 1
+
                     inlinks_sample[key_name] = inlinks_sample.get(key_name, \
                         []) + [val_name]
                 count += 1
