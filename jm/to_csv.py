@@ -7,6 +7,7 @@
 # constructing linear models.
 #
 # Necessary because having mrjob output to CSV in the manner we want is hard.
+# Deprecated in favor of batch_to_csv.py
 
 from pathlib import Path
 import pandas as pd
@@ -22,9 +23,6 @@ def convert_output(files_path = os.getcwd(), name = '{}_{}-{}', test =
     Reads the contents of mrjob output files into a dictionary, which is then
     turned into a pandas data frame (we utilize some useful built in indexing
     and sorting functions), and then lastly we write this data frame to a CSV.
-
-    The way the mrjob is written, we will write all relevant output files 
-    to a containing folder.
 
     Inputs:
         <str> files_path: The path of the directory containing the output files
