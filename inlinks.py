@@ -60,7 +60,8 @@ def one_to_five_inlinks_dump(json_file):
         json.dump(one_to_five_dict, f)
 
 
-def one_to_five_inlinks(json_file, titles_file, num_of_inlinks, num_of_pages):
+def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
+    num_of_pages):
     '''
     Generates a dict of num_of_pages pages with num_of_inlinks inlinks by 
     loading json_file (a dict containing all pages with one to five inlinks), 
@@ -73,7 +74,7 @@ def one_to_five_inlinks(json_file, titles_file, num_of_inlinks, num_of_pages):
                          page
         num_of_pages - parameter determining the number of pages needed
     Output:
-        inlinks_sample dictionary
+        inlinks_sample dictionary dumped into output_file
 
     '''
     titles = pd.read_csv(titles_file, delimiter = ' ', names = ['page title'])
@@ -93,10 +94,24 @@ def one_to_five_inlinks(json_file, titles_file, num_of_inlinks, num_of_pages):
                 count += 1
 
             if count == num_of_pages:
-                return inlinks_sample 
+                with open('samples/sample_' + str(num_of_inlinks) + '_' + \
+                    str(num_of_pages), 'w') as f:
+                    json.dump(inlinks_sample, f) 
+                return None
 
     print('there are only {:} pages', count)
-    return inlinks_sample       
+    with open('samples/sample_' + str(num_of_inlinks) + '_' + \
+        str(num_of_pages), 'w') as f:
+        json.dump(inlinks_sample, f) 
+    return None
+
+
+def one_to_five_inlinks_sample(num_of_inlinks, num_of_pages):
+    with open('samples/sample_' + str(num_of_inlinks) + '_' + \
+        str(num_of_pages), 'r') as f:
+        
+        sample_dict = json.load(f) 
+        return sample_dict
 
 
 def two_inlinks_sample(json_file_two):
