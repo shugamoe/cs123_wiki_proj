@@ -19,7 +19,7 @@ import os
 import json
 from inlinks import two_inlinks_sample
 import sys
-from testing import create_relevant
+from testing import scrub_parse_output
 
 DIVIDER = '   '
 
@@ -28,7 +28,7 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
     test = False):
     '''
     Reads the contents of mrjob output files into dictionaries, which are then
-    turned into pandas data frames (we utilize some useful built in indexing
+    turned into pandas data frames (we utilizec some useful built in indexing
     and sorting functions), and then lastly we write these data frames to 
     multiple or a single (assuming each page in the links_dict contains the
     same number of pages).  
@@ -40,7 +40,9 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
         <str> files_path: The path of the directory containing the output files
                           we would like to convert.
         <bool> combined: A boolean indicating whether or not the user would
-                         like to create only one combined CSV file.
+                         like to create only one combined CSV file.  If False
+                         one CSV file will be created for each page and its 
+                         inlinks.
         <bool> test: A boolean  indicating whether or not the user would like
                      to output intermediate JSON files to manually inspect 
                      some results.
@@ -60,8 +62,8 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
 
     If the example links_dict was given and combined = True, this function would
     create a single CSV, because in this case we would be interested in a 
-    single CSV that 
-
+    single CSV that contains the combined information of any number of pages
+    that all have the same number of inlinks.
     ''' 
     homedir = os.getcwd()
     # Change the current working directory to the path of the files we want to
@@ -75,19 +77,15 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
         num_pages += 1
 
     # Get filepaths of all mrjob mrjob_outputs
-    mrjob_outputs = [pth.as_posix() for pth in Path.cwd().iterdir() if 'part-' 
-    in pth.stem]
+    mrjob_outputs = [pth.as_posix() for pth in Path.cwd().iterdir() if 
+    pth.stem.endswith('-conv')]
 
     # Parse each file, adding the information contained within each entry to 
     # the appropriate dictionary within csv_dicts.
     for part in mrjob_outputs:
-        # Scrubs extraneous data from output.
-        create_relevant(part)
-        with open(part) as f:
+        with open(part, 'r') as f:
             for line in f:
-                entry = line.strip().strip('"').split(DIVIDER)
-                page, date, views, bytes = entry[0], entry[1], entry[2], \
-                entry[3]
+                page, date, views, bytes = line.strip().split(DIVIDER)
 
                 match_found = False
                 for mpage, inlinks in links_dict.items():
@@ -100,13 +98,13 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
                     elif page in inlinks:
                         match_found = True
                         csv_dicts[mpage].setdefault('traf_{}'.format(page), []
-                            ).append((date, bytes))
+                            ).append((date, views))
                         # We will calculate the bytes ratios later.
                         csv_dicts[mpage].setdefault('bratio_{}'.format(page), 
                             []).append((date, bytes))
                 if not match_found:
                     print("The following entry did not correspond to any known"
-                        "page of interest or inlinks to these pages\t", entry)
+                        "page of interest or inlinks to these pages\n", line)
     print("Output Parsed, proceeding to convert dictionaries to dataframes")
 
     # Enable manual inspection of dictionary prior to pandas friendly 
@@ -129,12 +127,13 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
          if combined:
             comb_min_date = min(loc_min_date, comb_min_date)
             comb_max_date = max(loc_max_date, comb_max_date)
+            data_frames.append(df)
          else:
-            df.to_csv('{}_{}-{}.csv'.format(loc_min_date, loc_max_date))
+            df.to_csv('{}_{}-{}.csv'.format(mpage, loc_min_date, loc_max_date))
 
     if combined:
         combined_df = pd.concat(data_frames)
-        combined_df.to_csv('combined_{}-{}.csv'.format(comb_min_date, 
+        combined_df.to_csv('{}_pages_{}-{}.csv'.format(num_pages, comb_min_date, 
             comb_max_date))
 
     # Change back to current directory when finished 
@@ -157,9 +156,9 @@ def dict_to_df(mpage, info_dict, homedir, combined = False, test = False):
                        if we encounter issues we revert to this as our working
                        directory.
         <bool> combined: A boolean indicating whether or not the user would
-                         like to create only one combined CSV file.  In this
-                         function this argument is simply passed to the 
-                         convert_dict function.
+                         like to create only one combined CSV file, rather than
+                         several.  In this function this argument is simply 
+                         passed to the convert_dict function.
         <bool> test: A boolean  indicating whether or not the user would like
                      to output intermediate JSON files to manually inspect 
                      some results.
@@ -171,7 +170,7 @@ def dict_to_df(mpage, info_dict, homedir, combined = False, test = False):
                             the info_dict.
         <pd df> df: A pandas dataframe created from the info_dict.  
     '''
-    convert_dict(mpage, info_dict, combined, test)
+    master_dates = convert_dict(mpage, info_dict, combined, test)
 
     # Create the dataframe.  The we set the index parameter to master_dates,
     # the sorted list of all the dates appearing in the files.  
@@ -259,40 +258,71 @@ def convert_dict(mpage, info_dict, combined = False, test = False):
     # us to combine multiple dataframes concerning pages with the same number
     # of inlinks.
     if combined:
+        titles = []
+        ignore = set()
         for col_name in info_dict:
-            if mpage in col_name:
+            if col_name in ignore:
+                pass
+            elif mpage in col_name:
                 if 'bytes' in col_name:
                     info_dict['<bytes_page>'] = info_dict.pop(col_name)
+                    ignore.add('<bytes_page>')
                 elif 'traf' in col_name:
                     info_dict['<traf_page>'] = info_dict.pop(col_name)
-                else:
-                    print("Investigate the following entry for page {}"
-                        .format(mpage), info_dict[col_name])
+                    ignore.add('<traf_page>')
             else:
                 if 'bratio' in col_name:
-                    info_dict['bratio_il{}'.format(bratios_seen)] = \
-                    info_dict.pop(col_name)
+                    page_name = col_name.lstrip('bratio_')
+                    if page_name not in titles:
+                        titles.append(page_name)
+                    title_id = titles.index(page_name)
+                    new_col_name = 'bratio_il{}'.format(title_id)
+                    info_dict[new_col_name] = info_dict.pop(col_name)
+                    ignore.add(new_col_name)
                 elif 'traf' in col_name:
-                    info_dict['traf_il{}'.format(trafs_seen)] = \
-                    info_dict.pop(col_name)
-                else:
-                    print("Investigate the following entry for page {}"
-                        .format(mpage))
-    # Enable manual inspection of dictionary prior to pandas friendly 
-    # conversion.                
-    if test:
-        with open('convert_dict.json', 'w') as f:
-            json.dump(info_dict, f)
+                    page_name = col_name.lstrip('traf_')
+                    if page_name not in titles:
+                        titles.append(page_name)
+                    title_id = titles.index(page_name)
+                    new_col_name = 'traf_il{}'.format(title_id)
+                    info_dict[new_col_name] = info_dict.pop(col_name)
+                    ignore.add(new_col_name)
+
+    return master_dates
     
 
+def run(link_json_path, mrjob_output_path, num_inlinks = None, combined = False, 
+    test = False):
+    '''
+    Wrapper function for make_all_csvs.  We first call a function that scrubs 
+    the mrjob data and parses the output.  It returns a dictionary that alerts
+    us as to what complete page information the scrubbed output will have.
 
-def run(link_json_path, mrjob_output_path, combined = False, test = False):
+    Then, we pass that dictionary, along with the path of the scrubbed files 
+    (which should be the same as the original path) to our make_all_csvs 
+    function to make either one or several CSV files.
+
+    Inputs:
+        <str> link_json_path: A string indicating the path of the json file
+                              that contains a master dictionary containing
+                              information on pages with a certain number of
+                              links.
+        <str> mrjob_output_path: A string indicating the path of the directory
+                                 containing our mrjob output.
+        <int> num_inlinks: This is the number of inlinks we expect each page to
+                           have.  If specified, this ensures that the
+                           dictionary returned will only have pages with the 
+                           specified number of inlinks.
+        <bool> combined: A boolean indicating whether or not the user would
+                         like to create only one combined CSV file.  If False
+                         one CSV file will be created for each page and its 
+                         inlinks.
+        <bool> test: A boolean  indicating whether or not the user would like
+                     to output intermediate JSON files to manually inspect 
+                     some results.
+    Outputs:
+        None: Writes one or several CSV files.
     '''
-    '''
-    links_dict = two_inlinks_sample(link_json_path)
+    links_dict = scrub_parse_output(mrjob_output_path, link_json_path, 
+        num_inlinks)
     make_all_csvs(links_dict, mrjob_output_path, combined, test)
-
-
-
-
-
