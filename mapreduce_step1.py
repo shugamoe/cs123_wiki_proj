@@ -1,6 +1,14 @@
 # To run code and save output of reducers to plain text documents: 
 # If 'mrjob_output' folder already exists, it gets overwritten
-# python3 mapreduce_step1.py -o 'mrjob_test_output' --no-output mrjob_test_input
+
+
+# python3 mapreduce_step1.py -o 'mrjob_20081008_1st' --no-output mrjob_input
+
+# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week3/oct15_16/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week3_Step1/oct15_16_step1/ --no-output
+
+
+# python3 mapreduce_step1.py -r emr -o s3://wikitrafv2big/oct2008_test_step1/ s3://wikitrafv2big/oct2008_test/
+# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_test/ > entries.txt
 
 # To run code on all files in a bucket in EMR, running on 1 computer: 
 # python mr_wordcount.py --num-ec2-instances=1 --python-archive package.tar.gz -r emr -o 's3://dataiap-bobbyadusumilli-testbucket/output' --no-output 's3://dataiap-wikipedia/*'
@@ -44,7 +52,6 @@ class RelevantEntries(MRJob):
 		"wikipedia_talk:", "title=", "search=", "template_talk:", "help:", \
 		"help_talk:", "wikiquote:", "wiktionary:", "wikisource:", "category%3a"]
 		self.remove = "|".join(self.remove_list)
-		print(self.remove)
 
 	def mapper(self, _, line):
 		'''
@@ -68,7 +75,7 @@ class RelevantEntries(MRJob):
 		date = datetime.datetime.strptime(date, "%Y%m%d-%H%M%S")
 		date = datetime.datetime.strftime(date, "%Y/%m/%d/%H")
 
-		title = urllib.parse.unquote_plus(fields[1]) 
+		title = urllib.parse.unquote_plus(fields[1])
 		
 		x = 0
 		while "%" in title: 
@@ -79,7 +86,12 @@ class RelevantEntries(MRJob):
 
 		if re.findall(self.remove, title.lower()) == []:
 			# output is: "pagename   datetime", [pageviews, bytes]
-			yield title + "   " + date, [int(fields[2]), int(fields[3])]
+
+			try: 
+				yield title + "   " + date, [int(fields[2]), int(fields[3])]
+
+			except: 
+				print("This line messed up the code: " + str(line))
 
 	def combiner(self, pagename, numbers):
 		'''
@@ -99,7 +111,7 @@ class RelevantEntries(MRJob):
 		pageviews = 0
 		bytes = 0
 
-		for each in numbers:
+		for each in page_numbers:
 			pageviews += each[0] 
 			bytes += each[1]
 
@@ -152,7 +164,7 @@ class RelevantEntries(MRJob):
 		pageviews = 0
 		bytes = 0
 
-		for each in numbers:
+		for each in page_numbers:
 			pageviews += each[0]
 			bytes += each[1]
 

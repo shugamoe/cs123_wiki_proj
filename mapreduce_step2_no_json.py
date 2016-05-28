@@ -4,8 +4,12 @@
 # python3 mapreduce_step2.py -o "Lower_Manhattan" --homepage="Lower_Manhattan" --link=links.txt --title=titles-sorted.txt --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output 
 # python3 mapreduce_step2.py -o json_files/"Lower_Manhattan" --homepage="Lower_Manhattan" --link=inlinks_files/links --title=inlinks_files/titles-sorted.txt --no-output --jobconf mapreduce.job.reduces=1 oct2008_en 
 
-# To run code on all files in a bucket in EMR, running on 1 computer: 
-# python mr_wordcount.py --num-ec2-instances=1 --python-archive package.tar.gz -r emr -o 's3://dataiap-bobbyadusumilli-testbucket/output' --no-output 's3://dataiap-wikipedia/*'
+
+
+# python3 mapreduce_step2_no_json.py -o "one-to-five" --link=one_to_five_inlinks.txt --no-output --jobconf mapreduce.job.reduces=1 mrjob_20081009_1st 
+
+# python3 mapreduce_step2.py -o "one-to-five" --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output 
+
 
 # Really good for AWS Map Reduce: https://dataiap.github.io/dataiap/day5/mapreduce
 # MRJob documentation: https://media.readthedocs.org/pdf/mrjob/latest/mrjob.pdf
@@ -56,6 +60,25 @@ def wiki_homepages(pagename, json_file, titles_file):
 	return homepage_titles
 
 
+def two_inlinks_sample(json_file_one_to_five):
+    
+    two_inlinks_sample = {}
+
+    with open(json_file_one_to_five, 'r') as f:
+        inlinks_dict = json.load(f)
+
+    two_inlinks_sample['Wrestling_Slang'] = inlinks_dict['Wrestling_Slang']
+    two_inlinks_sample['Concordia_University,_St._Paul'] = \
+        inlinks_dict['Concordia_University,_St._Paul']
+    two_inlinks_sample['A_Spaceman_Came_Travelling_(Christmas_Remix)'] = \
+        inlinks_dict['A_Spaceman_Came_Travelling_(Christmas_Remix)']
+    two_inlinks_sample['Transcendentals'] = inlinks_dict['Transcendentals']
+    two_inlinks_sample['Platinum_Card'] = inlinks_dict['Platinum_Card']
+
+    return two_inlinks_sample
+
+
+
 class PageName(MRJob):
 	'''
 	Class using MRJob to determine the determine all of the links associated
@@ -82,13 +105,13 @@ class PageName(MRJob):
 				pagenames of interest
 		'''
 		super(PageName, self).configure_options()
-		self.add_passthrough_option('--homepage', type='str')
+		# self.add_passthrough_option('--homepage', type='str')
 		self.add_file_option('--link')
-		self.add_file_option('--title')
+		# self.add_file_option('--title')
 		# self.add_passthrough_option('--hour', type='str')
 
 
-	def mapper_init_first(self): 
+	def mapper_init(self): 
 		'''
 		init to create a list of the pagenames of all links associated with 
 		the page of interest
@@ -97,17 +120,24 @@ class PageName(MRJob):
 			self.interest: List of all pagenames that link to page of interest
 		'''
 		# Set below variables equal to options written in Terminal command
-		self.page_of_interest = self.options.homepage
+		# self.page_of_interest = self.options.homepage
 		self.links = self.options.link
-		self.titles = self.options.title
+		print(self.links)
+		# self.titles = self.options.title
 
 		# Calling helper to determine the pagenames linked to interest pagename
-		self.interest = wiki_homepages(self.page_of_interest, str(self.links), str(self.titles))
-		print(self.interest)
+		self.interest = two_inlinks_sample(str(self.links))
+		self.interest_keys = list(self.interest.keys())
+		self.interest_values = []
+		for each in self.interest.values():
+			self.interest_values += each
+
+		print(self.interest_keys)
+		print(self.interest_values)
 		# self.hour = self.options.hour
 
 
-	def mapper_first(self, _, line):
+	def mapper(self, _, line):
 		'''
 		Function that yields pagenames that are links to the page of 
 		interest. Takes the output from mapreduce_step1.py. 
@@ -125,20 +155,19 @@ class PageName(MRJob):
 		fields = line.split("   ")
 		# fields[0] looks like: "pagename 		need to get rid of quotation mark
 		# pagename is often percent encoded, so need to remove this encoding
-		# title = urllib.parse.unquote_plus(fields[0])[1:]
 		title = fields[0][1:]
 
 		# Conditional if pagename is a link to page of interest
-		if title in self.interest:
+		if title in self.interest_keys:
 			# fields[3] looks like: 25"			need to get rid of quotation mark. 
 			yield title + "   " + fields[1] + "   " + fields[2], int(fields[3][:-1])
 
-		# Include info for page of interest
-		elif title == self.page_of_interest: 
+		elif title in self.interest_values:
+			# fields[3] looks like: 25"			need to get rid of quotation mark. 
 			yield title + "   " + fields[1] + "   " + fields[2], int(fields[3][:-1])
 
 
-	def combiner_first(self, relevant_line, bytes):
+	def combiner(self, relevant_line, bytes):
 		'''
 		Function to sum up bytes for each relevant Wikipedia page. 
 		Should be removed, since all pagenames are unique in mapreduce_step1.py 
@@ -155,25 +184,7 @@ class PageName(MRJob):
 		yield relevant_line, sum(bytes)
 
 
-	def reducer_init_first(self):
-		'''
-		init to create JSON file for page of interest that will store a 
-		dictionary for the page of interest of each datetime and bytes 
-		associated with that page of interest at that datetime. Necessary 
-		for calculating bytes ratio in next MRJob step. 
-
-		Relevant variables: 
-			self.page_of_interest_bytes: Dictionary that will house datetimes
-				and associated bytes for the page of interest
-		'''
-		self.page_of_interest = self.options.homepage
-		self.page_of_interest_bytes = {}
-
-		with open("/home/badusumilli/cs123_wiki_proj/" + str(self.page_of_interest) + ".json", "w") as outfile:
-			json.dump({}, outfile)
-
-
-	def reducer_first(self, relevant_line, bytes):
+	def reducer(self, relevant_line, bytes):
 		'''
 		Reducer to yield the relevant Wikipedia pages that link to the page 
 		of interest. Also add to the self.page_of_interest_bytes dictionary
@@ -191,86 +202,11 @@ class PageName(MRJob):
 		# fields[0] = pagename, fields[1] = datestring, fields[2] = pageviews
 		fields = relevant_line.split("   ")
 		relevant_bytes = sum(bytes)
-		if fields[0] == self.page_of_interest:
-			if relevant_bytes != 0: 
-				self.page_of_interest_bytes[fields[1]] = relevant_bytes
 
-		yield relevant_line, relevant_bytes
+		if relevant_bytes != 0: 
+			output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(relevant_bytes)
 
-
-	def reducer_final_first(self): 
-		'''
-		Add the self.page_of_interest_bytes dictionary to a JSON file that 
-		allows for the MRJob Step1 dictionary of (datetime, bytes) pairs 
-		to be used on MRJob Step2. 
-
-		Relevant file: 
-			"/home/badusumilli/cs123_wiki_proj/" + str(self.page_of_interest) + ".json"
-		'''
-		with open("/home/badusumilli/cs123_wiki_proj/" + str(self.page_of_interest) + ".json") as f:
-		    catalog = json.load(f)
-
-		with open("/home/badusumilli/cs123_wiki_proj/" + str(self.page_of_interest) + ".json", "w") as outfile:
-			catalog.update(self.page_of_interest_bytes)
-			json.dump(catalog, outfile)
-
-
-	def reducer_init_last(self):
-		'''
-		Reducer init of Step2 that creates local variable of the dictionary 
-		for the page of interest that includes (datetime, bytes) pairs. 
-
-		Relevant variable: 
-			self.page_of_interest_bytes: dictionary for page of interest
-		'''
-		self.page_of_interest = self.options.homepage
-		with open("/home/badusumilli/cs123_wiki_proj/" + str(self.page_of_interest) + ".json") as f:
-			self.page_of_interest_bytes = json.load(f)
-
-
-	def reducer_last(self, relevant_line, bytes):
-		'''
-		Reducer to yield the page of interest and all pagenames that link 
-		(including all details). 
-
-		If pagename = page of interest, it is necessary to include overall
-		bytes to assist in regressions. Output is: 
-			"pagename   datetime   pageviews   bytes_ratio   bytes"
-
-		If pagename != page of interest, output is:
-			"pagename   datetime   pageviews   bytes_ratio"
-		'''
-		interest_bytes = sum(bytes)
-		# fields = [pagename, datetime, pageviews]
-		fields = relevant_line.split("   ")
-
-		if fields[1] in self.page_of_interest_bytes.keys():
-			bytes_ratio = round(interest_bytes / self.page_of_interest_bytes[fields[1]], 2)
-			# output_line looks like: pagename   datetime   pageviews   bytes_ratio
-			if fields[0] != self.page_of_interest: 
-				output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(bytes_ratio)
-			else: 
-				output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(bytes_ratio) + "   " + str(interest_bytes)
-
-			yield None, output_line	
-
-
-	def steps(self):
-		'''
-		2 MRJob steps are needed in order to determine the bytes ratio for
-		each page associated with the page of interest
-		'''
-		return [
-		  MRStep(mapper_init=self.mapper_init_first,
-		  		 mapper=self.mapper_first,
-		         combiner=self.combiner_first,
-		         reducer_init=self.reducer_init_first,
-		         reducer=self.reducer_first,
-		         reducer_final=self.reducer_final_first),
-
-		  MRStep(reducer_init=self.reducer_init_last,
-		  		 reducer=self.reducer_last)
-		]
+			yield None, output_line
 
 
 if __name__ == '__main__':
