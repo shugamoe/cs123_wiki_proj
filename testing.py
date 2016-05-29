@@ -3,26 +3,15 @@ from pathlib import Path
 import os
 
 
-def two_inlinks_sample(json_file_one_to_five):
+def unpack_json(json_sample_path):
     '''
-    Andy's function. Only choose certain homepages to do the regression
-    analysis. 
+    Function to unpack a json file containing the pages and inlinks to those
+    pages we are interested in.
     '''
-    
-    two_inlinks_sample = {}
-
-    with open(json_file_one_to_five, 'r') as f:
+    with open(json_sample_path, 'r') as f:
         inlinks_dict = json.load(f)
 
-    two_inlinks_sample['Wrestling_Slang'] = inlinks_dict['Wrestling_Slang']
-    two_inlinks_sample['Concordia_University,_St._Paul'] = \
-        inlinks_dict['Concordia_University,_St._Paul']
-    two_inlinks_sample['A_Spaceman_Came_Travelling_(Christmas_Remix)'] = \
-        inlinks_dict['A_Spaceman_Came_Travelling_(Christmas_Remix)']
-    two_inlinks_sample['Transcendentals'] = inlinks_dict['Transcendentals']
-    two_inlinks_sample['Platinum_Card'] = inlinks_dict['Platinum_Card']
-
-    return two_inlinks_sample
+    return inlinks_dict
 
 
 def scrub_parse_output(files_path, json_path, num_inlinks = None):
@@ -54,7 +43,7 @@ def scrub_parse_output(files_path, json_path, num_inlinks = None):
     os.chdir(files_path)
 
     # Call function to get all homepages and links of interest
-    inlinks_dict = two_inlinks_sample(json_path)
+    inlinks_dict = unpack_json(json_path)
     pages_of_int = list(inlinks_dict.keys())
 
     mrjob_outputs = [pth.as_posix() for pth in Path.cwd().iterdir() if 
