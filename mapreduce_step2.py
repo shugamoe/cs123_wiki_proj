@@ -1,3 +1,5 @@
+# CS12300 Big Data Project - Julian McClellan, Andy Zhu, Bobby Adusumilli
+
 # To run code on local machine. If 'mrjob_output' folder already exists, it gets overwritten.
 # python3 mapreduce_step2.py -o "Lower_Manhattan" --homepage="Lower_Manhattan" --link=links.txt --title=titles-sorted.txt --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output 
 
