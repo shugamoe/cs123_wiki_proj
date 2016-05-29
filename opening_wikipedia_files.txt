@@ -1,3 +1,7 @@
+CS12300 Big Data Project - Julian McClellan, Andy Zhu, Bobby Adusumilli
+
+Text file on how to retrieve the Wikipedia data files from AWS and load onto local machine: 
+
 ec2-54-210-46-37.compute-1.amazonaws.com
 us-east-1c
 
@@ -12,12 +16,12 @@ sudo mount /dev/sdf /mnt/wikipedia
 # Create temporary folder to decompress files in ec2 terminal
 cd
 sudo mkdir temporary
-sudo cp /mnt/wikipedia/wikistats/pagecounts/pagecounts-20090826-230000.gz /home/ec2-user/temporary
-sudo gunzip temporary/pagecounts-20090826-200000.gz
+sudo cp /mnt/wikipedia/wikistats/pagecounts/pagecounts-20090828-230000.gz /home/ec2-user/temporary
+sudo gunzip temporary/pagecounts-20090828-230000.gz
 
 # Necessary to be able to copy files locally
-sudo chmod 777 temporary/pagecounts-20090826-230000.gz
+sudo chmod 777 temporary/pagecounts-20090828-230000
 
 # In local terminal
 # ec2-54-210-46-37.compute-1.amazonaws.com is my public DNS instance ID
-scp -i cslab.pem ec2-user@ec2-52-91-19-59.compute-1.amazonaws.com:/home/ec2-user/temporary/pagecounts-20090826-230000.gz ./cs123_wiki_proj
+scp -i cslab.pem ec2-user@ec2-52-87-242-130.compute-1.amazonaws.com:/home/ec2-user/temporary/pagecounts-20090828-230000 ./cs123_wiki_proj/mrjob_input
