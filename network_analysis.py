@@ -32,7 +32,7 @@ def graph(json_file):
 
 
 def graph_from_page(G, pagename, num_of_steps, inlinks_dict = inlinks_dict, 
-	pagename_bytes = []): #  14255(Dead...),53857 (Sickx), 15168 (Nigga_Deep),  13159(If these walls),  243673 (Brotha...),  16539 (Loaded), 
+	pagename_bytes = []): 
 
 
 	titles = pd.read_csv('titles-sorted.txt', delimiter = ' ', names = ['page title'])
@@ -48,16 +48,14 @@ def graph_from_page(G, pagename, num_of_steps, inlinks_dict = inlinks_dict,
 	for inlink in inlinks_dict.get(line_num, []):
 		G.add_edge(line_num, inlink)
 		G.node[inlink]['color'] = colors[1]
-		labels[inlink] = titles.iloc[[int(inlink) - 1]].values[0][0]
 
 		if num_of_steps > 1:
 			G = graph_from_page_helper(G, inlink, num_of_steps - 1, 
 				1)	
-	pos = nx.spring_layout(G)
 	if len(pagename_bytes) == 0:
-		nx.draw(G, node_color = [G.node[node].get('color') for node in G], node_size = 1000)
-	else:
-		nx.draw(G, node_color = [G.node[node].get('color') for node in G], node_size = pagename_bytes)
+		nx.draw(G, node_color = [G.node[node].get('color') for node in G], node_size = 300)
+	
+	pos = nx.spring_layout(G)
 	nx.draw_networkx_labels(G, pos, labels, font_size = 18)
 	manager = plt.get_current_fig_manager()
 	manager.window.showMaximized() 
