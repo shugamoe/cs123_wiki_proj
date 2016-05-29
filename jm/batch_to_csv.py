@@ -52,6 +52,21 @@ def run(link_json_path, mrjob_output_path, num_inlinks, merged = False,
         <bool> test: A boolean  indicating whether or not the user would like
                      to output intermediate JSON files to manually inspect 
                      some results.
+
+    [NOTE] The merged functionality, while working, is effectively useless for
+           regression because our functions do not currently have a method to
+           generalize which inlink information is combined.  I.e. if a column
+           on the combined CSV reads "traf_il0" referring the the traffic of 
+           the first inlink for pages with a certain number of inlinks, and it
+           was composed of information from several inlinks, these inlinks 
+           share nothing in common, so any coefficient on on this predictor 
+           variable has no intuitive interpretation.
+
+           Ideally I would have liked to introduce some ordinal ordering to the
+           inlinks.  I.e., I would have liked for the values in the column 
+           "traf_il0" to refer to traffic seen for the largest average byte 
+           size inlink for each page, and "traf_il1" would be analagous except
+           it would refer to the second largest inlink, and so on.
     Outputs:
         None: Writes one or several CSV files.
     '''
