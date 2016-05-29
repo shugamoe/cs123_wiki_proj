@@ -1,7 +1,7 @@
 # CS12300 Big Data Project - Julian McClellan, Andy Zhu, Bobby Adusumilli
 
 # Run on local machine: If 'mrjob_output' folder already exists, it gets overwritten
-# python3 mapreduce_step1.py -o 'mrjob_20081019_2nd' --no-output mrjob_input
+# python3 mapreduce_step1.py -o 'mrjob_20081019_2nd' --no-output mrjob_small_input
 
 # Run using AWS: 
 # python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week4/oct29_30/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --no-output
