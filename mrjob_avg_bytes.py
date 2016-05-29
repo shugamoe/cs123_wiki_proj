@@ -1,51 +1,12 @@
-# mapreduce_step1.py command on emr: 
-# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week4/oct29_30/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --no-output
+# To run this py file: 
+# python3 mrjob_avg_bytes.py -r emr --cluster-id j-275HT34NGNX71 --pages="BioShock" --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Oct_Total/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/bioshock/ --no-output
 
-# To run the below code on local machine
-# python3 mapreduce_step2_no_json.py -o "one-to-five" --link=samples/sample_5_5 --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output
-
-# To run on S3: 
-# python3 mapreduce_step2_no_json.py -r emr --cluster-id j-275HT34NGNX71 --link=one_to_five_inlinks.txt --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/test/output/ --no-output
-
-# python3 mapreduce_step2_no_json.py -r emr --cluster-id j-275HT34NGNX71 --link=samples/sample_5_20 --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Oct_Total/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/test/output_month_5_20/ --no-output
-
-# Data size = 9.26GB + 10.09GB + 9.18GB + 13.62GB = 42.15GB
-# Folders = 104 + 62 + 81 + 106 = 353 Files
 
 import mrjob
 from mrjob.job import MRJob
 import json
 import re
 import os
-# import pandas as pd
-
-
-# def two_inlinks_sample(json_file_one_to_five):
-# 	'''
-# 	Andy's function for a two link sample
-# 	'''
-    
-# 	two_inlinks_sample = {}
-
-	# with open(json_file_one_to_five, 'r') as f:
-	# 	inlinks_dict = json.load(f)
-
-# 	two_inlinks_sample['Wrestling_Slang'] = inlinks_dict['Wrestling_Slang']
-# 	two_inlinks_sample['Concordia_University,_St._Paul'] = \
-# 		inlinks_dict['Concordia_University,_St._Paul']
-# 	two_inlinks_sample['A_Spaceman_Came_Travelling_(Christmas_Remix)'] = \
-# 		inlinks_dict['A_Spaceman_Came_Travelling_(Christmas_Remix)']
-# 	two_inlinks_sample['Transcendentals'] = inlinks_dict['Transcendentals']
-# 	two_inlinks_sample['Platinum_Card'] = inlinks_dict['Platinum_Card']
-
-# 	return two_inlinks_sample
-
-def one_to_five_inlinks_sample(sample_file):
-	with open(sample_file, 'r') as f:
-
-		sample_dict = json.load(f) 
-		return sample_dict
-
 
 
 class PageName(MRJob):
@@ -73,7 +34,7 @@ class PageName(MRJob):
 				links to any given Wikipedia page of interest
 		'''
 		super(PageName, self).configure_options()
-		self.add_file_option('--link')
+		self.add_passthrough_option('--pages', type='str')
 
 
 	def mapper_init(self): 
@@ -85,19 +46,9 @@ class PageName(MRJob):
 			self.interest: List of all pagenames that link to page of interest
 		'''
 		# Set below variables equal to options written in Terminal command
-		self.links = self.options.link
+		self.pages = self.options.pages
 
-		# Calling helper to determine the pagenames linked to interest pagename
-		# self.interest = two_inlinks_sample(str(self.links))
-		self.interest = one_to_five_inlinks_sample(str(self.links))
-
-		# All homepages of interest
-		self.interest_keys = list(self.interest.keys())
-
-		# All inlinks of interest
-		self.interest_values = []
-		for each in self.interest.values():
-			self.interest_values += each
+		# self.list = []
 
 
 	def mapper(self, _, line):
@@ -119,20 +70,14 @@ class PageName(MRJob):
 		# fields[0] looks like: "pagename 		need to get rid of quotation mark
 		title = fields[0][1:]
 
-		# fields[3] looks like: 25"			need to get rid of quotation mark.
-		if re.findall("[0-9]+", fields[3]) != []:
-			fields[3] = re.findall("[0-9]+", fields[3])[0]
-		
-			# Conditional if pagename is a homepage
-			if title in self.interest_keys:
-				# fields[3] looks like: 25"			need to get rid of quotation mark. 
-				yield title + "   " + fields[1] + "   " + fields[2], int(fields[3])
+		if title == self.pages:
 
-			# Conditional if pagename is an inlink
-			elif title in self.interest_values:
-				# fields[3] looks like: 2500"			need to get rid of quotation mark. 
+			# fields[3] looks like: 25"			need to get rid of quotation mark.
+			if re.findall("[0-9]+", fields[3]) != []:
+				fields[3] = re.findall("[0-9]+", fields[3])[0]
 
 				yield title + "   " + fields[1] + "   " + fields[2], int(fields[3])
+
 
 
 	def combiner(self, relevant_line, bytes):
@@ -149,6 +94,15 @@ class PageName(MRJob):
 			bytes: updated bytes associated with relevant pagename
 		'''
 		yield relevant_line, sum(bytes)
+
+
+	def reducer_init(self):
+		self.pages = self.options.pages
+		# bytes_dict = {}
+		# word_frequency = {}
+
+		self.bytes = 0
+		self.frequency = 0
 
 
 	def reducer(self, relevant_line, bytes):
@@ -168,11 +122,24 @@ class PageName(MRJob):
 		fields = relevant_line.split("   ")
 		relevant_bytes = sum(bytes)
 
-		# Do not care if bytes info = 0. Most likely problem in data
-		if relevant_bytes != 0: 
-			output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(relevant_bytes)
+		# bytes_dict[fields[0]] = bytes_dict.get(fields[0], 0) + relevant_bytes
+		# word_frequency[fields[0]] = word_frequency.get(fields[0], 0) + 1
 
-			yield None, output_line
+		self.bytes += relevant_bytes
+		self.frequency += 1
+
+
+	def reducer_final(self):
+		# for page in self.pages: 
+		# output = bytes_dict.get(page, 0) / word_frequency.get(page, 1)
+		if self.frequency == 0:
+			output = 0
+
+		else: 
+			output = self.bytes / self.frequency
+
+		yield None, self.pages + "   " + str(output) 
+
 
 
 if __name__ == '__main__':
