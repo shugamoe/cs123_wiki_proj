@@ -11,53 +11,45 @@ output:
   word_document:
     toc: yes
 ---
-```{r, echo = FALSE}
-lms = list()
-
+```{r, echo = FALSE, message = FALSE, results = "hide"}
 # Read in all of our data and create regressions from them
 comb_3_8 = read.csv(file = 'outputs/oct_2008_3_8/6_pages_2008100100-2008103122.csv', row.names = NULL)
 # Drop dates column
 comb_3_8 = comb_3_8[, -1]
 # Make Regression
-comb_3_8.lm = lm(X.traf_page. ~ ., data = comb_3_8)
-append(lms, comb_3_8.lm)
+comb_3_8.lm.aic = stepAIC(lm(X.traf_page. ~ .^2, data = comb_3_8))
 
 click = read.csv(file = 'outputs/oct_2008_3_8/Click_(2006_film)_2008100100-2008103122.csv', row.names = 1)
-click.lm = lm(X.traf_Click_.2006_film.. ~ ., data = click)
-append(lms, click.lm)
+click.lm.aic = stepAIC(lm(X.traf_Click_.2006_film.. ~ .^2, data = click))
 
 renard = read.csv(file = 'outputs/oct_2008_3_8/Renard_R.31_2008100100-2008103120.csv', row.names = 1)
-renard.lm = lm(X.traf_Renard_R.31. ~ ., data = renard)
-append(lms, renard.lm)
+renard.lm.aic = stepAIC(lm(X.traf_Renard_R.31. ~ .^2, data = renard))
 
 comb_5_20 = read.csv(file = 'outputs/oct_2008_5_20/6_pages_2008100100-2008103122.csv',  sep = '\t', row.names = NULL)
 comb_5_20 = comb_3_8[, -1]
-comb_5_20.lm = lm(X.traf_page. ~ ., data = comb_5_20)
-append(lms, comb_5_20.lm)
+comb_5_20.lm.aic = stepAIC(lm(X.traf_page. ~ ., data = comb_5_20))
 
 artone = read.csv(file = 'outputs/oct_2008_5_20/Ar_Tonelico_2008100100-2008103123.csv', row.names = 1)
-artone.lm = lm(X.traf_Ar_Tonelico. ~ ., data = artone)
-append(lms, artone.lm)
+artone.lm.aic = stepAIC(lm(X.traf_Ar_Tonelico. ~ ., data = artone))
 
 eyecandy = read.csv(file = 'outputs/oct_2008_5_20/Eye_Candy_(Happy_Tree_Friends)_2008100102-2008103123.csv', row.names = 1)
-eyecandy.lm = lm(X.traf_Eye_Candy_.Happy_Tree_Friends.. ~ ., data = eyecandy)
-append(lms, eyecandy.lm)
+eyecandy.lm.aic = stepAIC(lm(X.traf_Eye_Candy_.Happy_Tree_Friends.. ~ ., data = eyecandy))
 
+# This will be the example model
 nigga = read.csv(file = 'outputs/oct_2008_5_20/Nigga_Deep_2008100100-2008103123.csv', row.names = 1)
 # Note the estimates of the bratio and traf for Dead_4_Life in this regression.
 nigga.lm = lm(X.traf_Nigga_Deep. ~ ., data = nigga)
-append(lms, nigga.lm)
+nigga.lm.aic = stepAIC(lm(X.traf_Nigga_Deep. ~ ., data = nigga))
 
 something = read.csv(file = "outputs/oct_2008_5_20/Something's_Gotta_Give_2008100100-2008103123.csv", row.names = 1)
-something.lm = lm(X.traf_Something.s_Gotta_Give. ~ ., data = something)
-append(lms, something.lm)
+something.lm.aic = stepAIC(lm(X.traf_Something.s_Gotta_Give. ~ ., data = something))
 ```
 
 # Data Files
 
 ## wikidata/wikistats (650G Compressed | 2.5TB Uncompressed)
 
-Contains hourly wikipedia article traffic statistics dataset covering 16 month 
+Contains hourly Wikipedia article traffic statistics dataset covering 16 month 
 period from October 01 2008 to February 6, 2010, from raw anonymous logs 
 provided by Domas Mituzas at http://dammit.lt/2007/12/10/wikipedia-page-counters/
 
@@ -65,7 +57,7 @@ Each log file is named with the date and time of collection:
 
 *pagecounts-20090430-230000.gz*
 
-Each line has 4 fields: projectcode, pagename, pageviews, bytes
+Each line has 4 fields: projectcode, pagename, pageviews, bytes 
 
     en Barack_Obama 997 123091092
     en Barack_Obama%27s_first_100_days 8 850127
@@ -89,24 +81,28 @@ it. The format of the lines is:
     from2: to21 to22 to23 ...
     ...
     
-where from1 is an integer labelling a page that has links from it, and 
-to11 to12 to13 ... are integers labelling all the pages that the page links to. To find the page title that corresponds to integer n, just look up the n-th line in the file *titles-sorted.txt*. 
+where from1 is an integer labeling a page that has links from it, and 
+to11 to12 to13 ... are integers labeling all the pages that the page links to. To find the page title that corresponds to integer n, just look up the n-th line in the file *titles-sorted.txt*. 
 
 ***
 
 ## File summary:
 
 *pagecounts-<date and time>.gz*  
-* Contains n lines with 4 fields: projectcode (we want "en" only!), pagename,                     pageviews, and bytes  
+* Contains n lines with 4 fields: projectcode (we want "en" only!), pagename, pageviews, and bytes  
 * Dates range from 10/01/2008 to 02/06/2010  
 
 *links-simple-sorted.txt*  
-* Contains all links between proper english language wikipedia pages.
+* Contains all links between proper English language wikipedia pages.
 
 *titles-sorted.txt*  
 * Contains the names of all English Language Wikipedia pages.
+
+## How we found our Data.
+
+We searched through the public data sets available on Amazon in search of a dataset whose information was contained in a relatively clean format.  Each line of the pagecounts data is relatively easy to interpret and along with the data on the links all of our files *appeared* relatively easy to parse in a systematic way.  
     
-# Hypothesis
+# *Initial* Hypothesis
 
 ## We will attempt to quantify the relationship between pages and inlinks to these pages.
 
@@ -152,7 +148,7 @@ Before the data could even be used, it had to be moved from the read only volume
 
 Over the course of a week or so, the pagecounts data was copied to a new volume with more permissions, decompressed within that volume, and then uploaded to an S3 bucket to facilitate mrjob use.
 
-However, within the 2.5TB of uncompressed data in the S3 bucket there was a lot of unnecessary information.  The data contained within wikidata/wikilinks pertained only to English language Wikipedia pages, so the first step was to scrub the data clean of anything else.  This process, which took about a day, involved creating 20 instances, each utilizing the s3fs library to mount the S3 bucket onto these instances and running a sed script on each machine to clean data pertaining to a certain hour of the data, and then mopping up the remaining hours with 4 of the 20 instances.  This process reduced the uncompressed size of the data from 2.5TB to 660GB uncompressed.
+However, within the 2.5TB of uncompressed data in the S3 bucket there was a lot of unnecessary information.  The data contained within wikidata/wikilinks pertained only to English language Wikipedia pages, so the first step was to scrub the data clean of anything else.  This process, which took about a day, involved creating 20 instances, each utilizing the s3fs library to mount the S3 bucket onto these instances and running a sed script on each machine to clean data pertaining to a certain hour of the data, and then mopping up the remaining hours with 4 of the 20 instances.  This semi-automated process reduced the uncompressed size of the data from 2.5TB to 660GB uncompressed.
 
 Our data spanned 16 months, but given our time constraints level of proficiency with methods like mrjob we opted to focus on a smaller subset of data: one out of the 16 months provided to us (42.5G)
 
@@ -166,7 +162,57 @@ Even with our data free of all non-English entries.  There were still a number o
 
 ## Producing Data to Test Our Hypothesis
 
-Ideally, if we wanted to test our hypothesis on "Page A" over a period of time, we would want to be able to record a single observation for every hour, with each observation containing the traffic and bytes information for Page A *and* it's inlinks.  Unfortunately our data was only a sample of hourly Wikipedia traffic, so we weren't guaranteed to have information about Page A for any particular hour.  (Indeed, in the initial filtering of the non-English entries there were entire files containing no English entries whatsoever!)  Given this fact and our one month data constraint (744 hours), testing our hypothesis on any single page with a large number of inlinks was not feasible, as the higher the number of inlinks a page had, the fewer "complete" observations we would be able to skim from the data (probabilistically speaking).  We chose to focus on pages with anywhere from 1-5 inlinks so that if we were 
+Ideally, if we wanted to test our hypothesis on "Page A" over a period of time, we would want to be able to record a single observation for every hour, with each observation containing the traffic and bytes information for Page A *and* it's inlinks.  Unfortunately our data was only a sample of traffic, so we weren't guaranteed to have information about Page A for any particular hour.  (Indeed, in the initial filtering of the non-English entries there were entire files containing no English entries whatsoever!)  Given this fact and our one month data constraint (744 hours), testing our hypothesis on any single page with a large number of inlinks was not feasible, as the higher the number of inlinks a page had, the fewer "complete" observations we would be able to skim from the data (probabilistically speaking), and combined with the higher number of predictor variables that comes with more inlinks, this would have decreased the chances that we could run a valid regression.  Accordingly, we chose to focus on pages with anywhere from 1-5 inlinks.
+
+Still, according to our link data, there were still ~700,000 or so pages with 1-5 inlinks.  We didn't exactly have any criteria for selecting any subsets of pages out the 700,000 available, so we opted to select small numbers of pages with the same number of inlinks.  E.g., we would randomly select anywhere from 5-20 pages, each with the same number of corresponding inlinks and then run an mrjob to parse our 744 hours of data and output information pertaining to these pages and their inlinks.  This information then was passed through a Python script that created CSV files that were read into dataframes for manipulation in R.  As mentioned previously, it was impossible for us to gather a full 744 observations (an observation being the combined individual observations of a page and all of its inlinks), but most of the time we were able to gather enough observations to run a linear regression.
+
+Our initial hypothesis placed a lot of emphasis on comparing the effects of traffic and bytes ratios for all the inlinks of a page.  However, upon running a full regression of a page's traffic on all of the predictor variables, it turned out (not unexpectedly) that a lot of our coefficient estimates for our predictor variables were not significant.  We decided then to use an iterative AIC (Akaike information criterion) method in order to find the best parsimonious model.  This iterative work was done automatically using a function in R, but the general idea behind the iterative AIC method is too continuously remove predictor variables from the model if they lowered the AIC of the model (i.e. they made the model "better") until the AIC could not be lowered any further.  
+
+The resulting models were much more likely to have significant predictor variables, and indeed, one could interpret the remaining predictor variables as the inlinks to a page that had the strongest effects on the hourly traffic of the page.  
+
+Let's take a look at the regression models concerning a specific page and its inlinks, starting with the full model, then a reduced model obtained with an AIC method, and ending with some discussion on the results of the reduced model.
+
+Note that the following analysis could be reproduced for any page someone could be interested in.  
+
+# Results: Case Study of the page on the compilation rap album *Nigga Deep* (1998)
+
+Our page had 5 inlinks, so we begin with a full model that has a total of 11 predictor variables, 5 (bytes ratios for inlinks) + 5 (traffic for inlinks) + 1 (bytes of our main page).  
+
+The inlinks correspond either to Brotha Lynch, SicX (The two artists featured on the album), as well as Dead $ Life, If These Walls Could Talk, and Loaded, other rap albums by either Brotha Lynch Hug or Sicx.  
+
+```{r, message = FALSE}
+# Let's view our starting model
+summary(nigga.lm)
+```
+
+As we can see from the p-values column, most of the predictors are not significant, at least at the 5% level.  We do note that our *most* significant predictor is X.byes Nigga Deep, which is the hourly measure of the size of the page in bytes.  This isn't too surprising, the size of the page only  increases if users add content to the page, and the more content a page has, the more enticing it is for traffic or(?) the more representative it is of how many people would like to visit the page.  
+
+Now let's try and get a simpler model with fewer, and hopefully more significant predictor variables.  
+
+```{r, message = FALSE}
+# View the reduced model (created using stepAIC(nigga.lm))
+summary(nigga.lm.aic)
+```
+
+Firstly, we notice that the number of predictor variables remaining in the model has been reduced to 5 from our original 11 predictors.  The remaining predictor variables are the bytes of our original page, and the traffic and bytes ratio variables for Dead 4 Life, an album by Sicx, and Loaded, by Brotha Lynch Hung.  The p-values for Dead 4 Life are about as significant as they were in the full model, the p-value for Loaded's bytes ratio has improved from ~.6 to ~.12, and the p-value for Loaded's traffic has improved from ~.12 to ~.08.  
+
+Let's take a look at the coefficients.  We expect the size of the page in bytes to move positively with traffic, so the first coefficient's sign comes as no surprise.  Additionally, looking at the traffic variables, we see that their  coefficient values are also positive, which also makes sense intuitively.  As an inlink to the page receives more traffic, we'd expect some of that traffic to bleed into our page of interest as people have some chance of clicking the link to Nigga Deep.  
+
+Generally, we can interpret these coefficients as the change in the traffic for Nigga Deep as the ratio of bytes between the other album and Nigga Deep increases by 1.  E.g., if the page for the album Dead 4 Life became twice as big as the page for Nigga Deep, we would expect to see a change in the traffic of Nigga Deep equal to the coefficient.  
+
+The coefficients for the bytes ratios for the two other albums appear a bit confusing.  We see that the coefficients for the bytes ratios are either positive and negative (although the positive one's p-value is not significant at the 5% level).  While trying to come up with a hypotheses to explain a positive or negative coefficient, we figured it might not have been prudent to utilize bytes ratio as a predictor variable, since  any predictor variable that has to do with an inlink is an attempt to explain why someone on the inlink page might click the link to navigate to our page of interest.  However, the bytes ratio predictor variable includes information about our page of interest (its size in bytes) that someone one the inlink page would not know, so it's not fully representative of that situation.  
+
+Ideally then, in place of bytes ratios, it would probably have been good to utilize bytes instead, along with hourly information number of links each inlink page has, in order to give a rough idea of how big the inlink page is, and how likely one might click on our page of interest given a number of other links to click on.  However, we only had access to the hourly bytes observation of the page, which could possibly introduce collinearity between the traffic for the inlink and its bytes size. (Isn't linear regression fun?)
+
+# Closing Thoughts
+
+## Julian McClellan
+
+They say to live life with no regrets, but time and time again while doing this project I found that after I had done something, I then thought of a way to accomplish the same thing in a way that would have saved me much time and effort.  For example, the transferring of the data from the read-only volume to (eventually) the S3 bucket could have been done in a much more efficient fashion.  I initially transferred the data from a read-only volume to a volume that I could control, and then unzipped it to the S3 bucket, all with only one instance.  I learned later to utilize more instances in an ad-hoc approach (i.e. 20 instances running sed across the S3 Bucket).  
+
+Additionally, throughout the project, I relied too much on utilizing mrjob and AWS with their command line interfaces or web interface (for AWS).  I.e., I utilized these things mostly in the manner we learned in labs.  Consequently, the flow of our work was less cohesive than it could have been.   While I was creating my ad-hoc 20 instances to scrub the data I did get integrate some AWS features with Python (although I did this by calling command line arguments in a Python function rather than utilizing a package like boto3).  There were definitely areas where we could have utilized mrjob as a [nicely integrated aspect in a Python function](https://pythonhosted.org/mrjob/job.html#mrjob.job.MRJob.__init__).  Of course, this would have involved some overhead in reading documentation and gaining experiences with these different methods, but in hindsight, it may have been worth the investment.  
+
+Anyways, moving forward, thanks to plenty of things I've realized about doing this project in hindsight, I think I'm in a good spot to further improve working with AWS, mrjob, and big data and experimental design in general.  I still have ~10 months left in my free AWS account and I'll spend some of my summer refining some of the procedures that my group and I used in this project.  
 
 
 
