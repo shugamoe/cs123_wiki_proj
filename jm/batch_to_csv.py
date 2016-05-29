@@ -65,6 +65,7 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
     single CSV that contains the combined information of any number of pages
     that all have the same number of inlinks.
     ''' 
+    print("Looking for: \n{}\n".format(links_dict))
     homedir = os.getcwd()
     # Change the current working directory to the path of the files we want to
     # convert to a CSV.
@@ -103,9 +104,9 @@ def make_all_csvs(links_dict, files_path = os.getcwd(), combined = False,
                         csv_dicts[mpage].setdefault('bratio_{}'.format(page), 
                             []).append((date, bytes))
                 if not match_found:
-                    print("The following entry did not correspond to any known"
-                        "page of interest or inlinks to these pages\n", line)
-    print("Output Parsed, proceeding to convert dictionaries to dataframes")
+                    # print("The following entry did not correspond to any known"
+                    #     "page of interest or inlinks to these pages\n", line)
+                    pass
 
     # Enable manual inspection of dictionary prior to pandas friendly 
     # conversion.                
