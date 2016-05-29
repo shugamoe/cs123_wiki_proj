@@ -12,7 +12,45 @@ output:
     toc: yes
 ---
 ```{r, echo = FALSE}
-# Read in all of our regressions
+lms = list()
+
+# Read in all of our data and create regressions from them
+comb_3_8 = read.csv(file = 'outputs/oct_2008_3_8/6_pages_2008100100-2008103122.csv', row.names = NULL)
+# Drop dates column
+comb_3_8 = comb_3_8[, -1]
+# Make Regression
+comb_3_8.lm = lm(X.traf_page. ~ ., data = comb_3_8)
+append(lms, comb_3_8.lm)
+
+click = read.csv(file = 'outputs/oct_2008_3_8/Click_(2006_film)_2008100100-2008103122.csv', row.names = 1)
+click.lm = lm(X.traf_Click_.2006_film.. ~ ., data = click)
+append(lms, click.lm)
+
+renard = read.csv(file = 'outputs/oct_2008_3_8/Renard_R.31_2008100100-2008103120.csv', row.names = 1)
+renard.lm = lm(X.traf_Renard_R.31. ~ ., data = renard)
+append(lms, renard.lm)
+
+comb_5_20 = read.csv(file = 'outputs/oct_2008_5_20/6_pages_2008100100-2008103122.csv',  sep = '\t', row.names = NULL)
+comb_5_20 = comb_3_8[, -1]
+comb_5_20.lm = lm(X.traf_page. ~ ., data = comb_5_20)
+append(lms, comb_5_20.lm)
+
+artone = read.csv(file = 'outputs/oct_2008_5_20/Ar_Tonelico_2008100100-2008103123.csv', row.names = 1)
+artone.lm = lm(X.traf_Ar_Tonelico. ~ ., data = artone)
+append(lms, artone.lm)
+
+eyecandy = read.csv(file = 'outputs/oct_2008_5_20/Eye_Candy_(Happy_Tree_Friends)_2008100102-2008103123.csv', row.names = 1)
+eyecandy.lm = lm(X.traf_Eye_Candy_.Happy_Tree_Friends.. ~ ., data = eyecandy)
+append(lms, eyecandy.lm)
+
+nigga = read.csv(file = 'outputs/oct_2008_5_20/Nigga_Deep_2008100100-2008103123.csv', row.names = 1)
+# Note the estimates of the bratio and traf for Dead_4_Life in this regression.
+nigga.lm = lm(X.traf_Nigga_Deep. ~ ., data = nigga)
+append(lms, nigga.lm)
+
+something = read.csv(file = "outputs/oct_2008_5_20/Something's_Gotta_Give_2008100100-2008103123.csv", row.names = 1)
+something.lm = lm(X.traf_Something.s_Gotta_Give. ~ ., data = something)
+append(lms, something.lm)
 ```
 
 # Data Files
