@@ -108,7 +108,7 @@ We searched through the public data sets available on Amazon in search of a data
 
 Imagine the simplest case.  A  page only has one inlink, IL. We propose a linear model for the traffic of that page as:
         
-$traf\_page_{t}=\beta_{0}+\beta_{1}traf\_IL_{t}+\beta_{2}bratio\_IL{}_{t}+\beta_{3}bytes\_page_{t}\epsilon_{t}$ 
+$traf\_page_{t}=\beta_{0}+\beta_{1}traf\_IL_{t}+\beta_{2}bratio\_IL{}_{t}+\beta_{3}bytes\_page_{t}+\epsilon_{t}$ 
 
 Where $bratio\_IL{}_{t}=\frac{bytes\_IL_{t}}{bytes\_page_{t}}$.  That is, the bytes ratio is the ratio of the page size in bytes, of the inlink IL to the page.  
 
