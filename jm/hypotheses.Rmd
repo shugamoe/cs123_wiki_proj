@@ -1,6 +1,6 @@
 ---
 title: 'CS123 Wikipedia Project: Writeup'
-author: "Julian McClellan, Bobby Adsumilli, Andy Zhu"
+author: "Julian McClellan, Bobby Adusumilli, Andy Zhu"
 date: "May 30, 2016"
 output:
   pdf_document:
@@ -150,15 +150,19 @@ Over the course of a week or so, the pagecounts data was copied to a new volume 
 
 However, within the 2.5TB of uncompressed data in the S3 bucket there was a lot of unnecessary information.  The data contained within wikidata/wikilinks, which was necessary to test our hypothesis, pertained only to English language Wikipedia pages, so the first step was to scrub the pagecounts files clean of anything else.  This process, which took about a day, involved creating 20 instances, each utilizing the s3fs library to mount the S3 bucket onto these instances and running a sed script on each machine to clean data pertaining to a certain hour of the data, and then mopping up the remaining hours with 4 of the 20 instances.  This semi-automated process reduced the uncompressed size of the data from 2.5TB to 660GB uncompressed.
 
-Our data spanned 16 months, but given our time constraints level of proficiency with methods like mrjob we opted to focus on a smaller subset of data: one out of the 16 months provided to us (42.5G)
+Our data spanned 16 months, but given our time constraints level of proficiency with methods like mrjob we opted to focus on a smaller subset of data: one out of the 16 months provided to us
 
 This initial setup and exploration of the data was done in an ad-hoc fashion while other group members focused on gaining a familiarity with mrjob and refining our initial rough hypothesis.
 
-## Reconfiguration, Exploration, and Further Filtering of the Data [Bobby feel free to change the title]
+## Reconfiguration, Exploration, and Further Filtering of the Data
 
-Even with our data free of all non-English entries.  There were still a number of entries within the data concerning Wikipedia pages we had no interest in. 
+Even with our data free of all non-English entries, there were still a number of entries within the data concerning Wikipedia pages we had no interest in.  For example, Wikipedia images do not link to other pages, so we decided to remove these entries like these from our raw data.  Through our mapreduce_step1.py ("Step 1") file, we remove all pagenames that cannot have inlinks associated with them.  Removing these entries helped to decrease our raw English-only data by roughly 25%.  
 
-[Bobby will describe the sorts of pages and in general what his mrjob step 1 file tried to accomplish]
+Additionally, some of the pagenames in the raw data contain percent encoding, meaning we had to remove this percent encoding in "Step 1".  Finally, since a pagename could theoretically have an entry for every hour in the dataset, we decided to include the datetime in each line of the data, in order to make further processing of the data easier. 
+
+Thus, "Step 1" would take a line of data of the form "language pagename pageviews bytes" and yield a line of data of the form "pagename   datetime   pageviews   bytes".  To run "Step 1" for all of the raw data in October 2008, it took roughly 12 hours for 14 instances, resulting in 42.15G of data.  
+
+When we have a specific pagename or group of pagenames and associated inlinks of which we want the corresponding hourly information over the monthly dataset, we use this "Step 1" output in our mapreduce_step2_no_json.py ("Step 2") to yield only those lines pertaining to the pages of interest.  
 
 ## Producing Data to Test Our Hypothesis
 
@@ -206,7 +210,7 @@ Generally, we can interpret the bytes ratio coefficients as the change in the tr
 
 The coefficients for the bytes ratios for the two other albums appear a bit confusing.  We see that the coefficients for the bytes ratios are either positive and negative (although the positive one's p-value is not significant at the 5% level).  While trying to come up with a hypotheses to explain a positive or negative coefficient, we figured it might not have been prudent to utilize bytes ratio as a predictor variable, since  any predictor variable that has to do with an inlink is an attempt to explain why someone on the inlink page might click the link to navigate to our page of interest.  However, the bytes ratio predictor variable includes information about our page of interest (its size in bytes) that someone one the inlink page would not know, so it's not fully representative of that situation.  
 
-Ideally then, in place of bytes ratios, it would probably have been good to utilize bytes instead, along with hourly information number of links each inlink page has, in order to give a rough idea of how big the inlink page is, and how likely one might click on our page of interest given a number of other links to click on.  However, we only had access to the hourly bytes observation of the page, which could possibly introduce collinearity between the traffic for the inlink and its bytes size. (Isn't linear regression fun?)
+Ideally then, in place of bytes ratios, it would probably have been good to utilize bytes instead, along with hourly information number of links each inlink page has, in order to give a rough idea of how big the inlink page is, and how likely one might click on our page of interest given a number of other links to click on.  However, we only had access to the hourly bytes observation of the page.
 
 # Closing Thoughts
 
@@ -214,7 +218,7 @@ Ideally then, in place of bytes ratios, it would probably have been good to util
 
 They say to live life with no regrets, but time and time again while doing this project I found that after I had done something, I then thought of a way to accomplish the same thing in a way that would have saved me much time and effort.  For example, the transferring of the data from the read-only volume to (eventually) the S3 bucket could have been done in a much more efficient fashion.  I initially transferred the data from a read-only volume to a volume that I could control, and then unzipped it to the S3 bucket, all with only one instance.  I learned later to utilize more instances in an ad-hoc approach (i.e. 20 instances running sed across the S3 Bucket).
 
-The linear regression that was eventually conducted 
+The general model for our linear regressions could have been improved upon, but this isn't a statistics class, so I'll just leave it at that.
 
 Additionally, throughout the project, I relied too much on utilizing mrjob and AWS with their command line interfaces or web interface (for AWS).  I.e., I utilized these things mostly in the manner we learned in labs.  Consequently, the flow of our work was less cohesive than it could have been.   While I was creating my 20 instances to scrub the data I did get integrate some AWS features with Python (although I did this by calling command line arguments in a Python function rather than utilizing a package like boto3).  There were definitely areas where we could have utilized mrjob as a [nicely integrated aspect in a Python function](https://pythonhosted.org/mrjob/job.html#mrjob.job.MRJob.__init__).  Of course, this would have involved some overhead in reading documentation and gaining experiences with these different methods, but in hindsight, it may have been worth the investment.  
 

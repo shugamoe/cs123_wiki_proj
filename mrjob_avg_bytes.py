@@ -1,4 +1,6 @@
-# To run this py file: 
+# CS12300 Big Data Project - Julian McClellan, Andy Zhu, Bobby Adusumilli
+
+# To run this py file using out AWS data: 
 # python3 mrjob_avg_bytes.py -r emr --cluster-id j-275HT34NGNX71 --pages="BioShock" --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Oct_Total/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/bioshock/ --no-output
 
 
@@ -11,13 +13,8 @@ import os
 
 class PageName(MRJob):
 	'''
-	Class using MRJob to determine the determine all of the links associated
-	with one Wikipedia page of interest, and retrieve the pagename, datetime, 
-	pageviews, and bytes for each datetime. This info is relevant to perform 
-	the regression analyses. This function doesn't use a json file to store 
-	the homepage bytes numbers, unlike the mapreduce_step2.py, which is run
-	on local machine. Functions for statistical analysis will calculate bytes
-	ratios. 
+	Class using MRJob to determine the average bytes value of one page over 
+	all of the time in one dataset.  
 
 	PageName takes in output files from mapreduce_step1.py, meaning txt files
 	with all potentially relevant English Wikipedia pagenames, datetimes, 
@@ -30,8 +27,7 @@ class PageName(MRJob):
 		'''
 		To provide passthrough options when calling PageName class in the 
 		Terminal. Passthrough options include: 
-			--link: links.txt file containing all Wikipedia pagenames that are 
-				links to any given Wikipedia page of interest
+			--pages: Pagename of interest
 		'''
 		super(PageName, self).configure_options()
 		self.add_passthrough_option('--pages', type='str')
@@ -39,30 +35,25 @@ class PageName(MRJob):
 
 	def mapper_init(self): 
 		'''
-		init to create a list of the pagenames of all links associated with 
-		the page of interest
+		init to specify the page of interest
 
 		Relevant output variable: 
-			self.interest: List of all pagenames that link to page of interest
+			self.pages: pagename of interest
 		'''
-		# Set below variables equal to options written in Terminal command
+		# Set below variable equal to options written in Terminal command
 		self.pages = self.options.pages
-
-		# self.list = []
 
 
 	def mapper(self, _, line):
 		'''
-		Function that yields pagenames that are links to the page of 
-		interest. Takes the output from mapreduce_step1.py. 
+		Function that yields all hourly data for pagename of interest 
 
 		Input: 
 			line: row of mapreduce_step1.py file, of form: 
 				"pagename   datetime   pageviews   bytes"
 
 		Outputs: 
-			String of pagenames (and relevant details) that are links to page
-				of interest. Of form: 
+			String of pagename of interest (and relevant details). Of form: 
 				"pagename   datetime   pageviews", bytes 
 		'''
 		# fields = [pagename, datestring, pageviews, bytes]
@@ -82,24 +73,25 @@ class PageName(MRJob):
 
 	def combiner(self, relevant_line, bytes):
 		'''
-		Function to sum up bytes for each relevant Wikipedia page. 
-		Realistically bytes data should not change since mostly unique entries. 
+		Function to sum up bytes for page of interest for each hour
 
 		Inputs: 
 			relevant_line: Relevant pagename, associated datetime, and pageviews
-			bytes: bytes associated with relevant pagename
+			bytes: bytes associated with relevant pagename and datetime
 
 		Outputs: 
 			relevant_line: Relevant pagename, associated datetime, and pageviews
-			bytes: updated bytes associated with relevant pagename
+			bytes: updated bytes associated with relevant pagename and datetime
 		'''
 		yield relevant_line, sum(bytes)
 
 
 	def reducer_init(self):
+		'''
+		Specify variables to help calculate the average bytes value for the 
+		page of interest over the dataset
+		'''
 		self.pages = self.options.pages
-		# bytes_dict = {}
-		# word_frequency = {}
 
 		self.bytes = 0
 		self.frequency = 0
@@ -107,8 +99,9 @@ class PageName(MRJob):
 
 	def reducer(self, relevant_line, bytes):
 		'''
-		Reducer to yield the relevant Wikipedia pages that link to the pages 
-		of interest, and pages of interest themselves. 
+		Reducer to yield the calculate the sum of the bytes of the page of 
+		interest over the dataset, as well as count the frequency of how many 
+		times the pagename showed up in the hourly dataset
 
 		Inputs: 
 			relevant_line: Relevant pagename, associated datetime, and pageviews
@@ -122,16 +115,16 @@ class PageName(MRJob):
 		fields = relevant_line.split("   ")
 		relevant_bytes = sum(bytes)
 
-		# bytes_dict[fields[0]] = bytes_dict.get(fields[0], 0) + relevant_bytes
-		# word_frequency[fields[0]] = word_frequency.get(fields[0], 0) + 1
-
 		self.bytes += relevant_bytes
 		self.frequency += 1
 
 
 	def reducer_final(self):
-		# for page in self.pages: 
-		# output = bytes_dict.get(page, 0) / word_frequency.get(page, 1)
+		'''
+		Calculate and return the average bytes of the page of interest over 
+		the given dataset
+		'''
+		# Specify pagename not in data 
 		if self.frequency == 0:
 			output = 0
 
