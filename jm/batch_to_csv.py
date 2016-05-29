@@ -234,10 +234,6 @@ def convert_dict(mpage, info_dict):
                      response variable in our regression.
         <dict> info_dict: A dictionary containing the raw information skimmed
                           from the mrjob output.
-        <bool> merged: A boolean indicating whether or not the user would
-                       like to include a merged CSV file that is a combination
-                       of the all the other CSV files written except with a 
-                       uniform naming scheme.
     '''
     # Extract the bytes values from the page of interest so we can calculate
     # bytes ratios.  
