@@ -1,13 +1,10 @@
-# To run code and save output of reducers to plain text documents: 
+# CS12300 Big Data Project - Julian McClellan, Andy Zhu, Bobby Adusumilli
 
-# On local machine: If 'mrjob_output' folder already exists, it gets overwritten
+# Run on local machine: If 'mrjob_output' folder already exists, it gets overwritten
 # python3 mapreduce_step1.py -o 'mrjob_20081019_2nd' --no-output mrjob_input
 
-# Using AWS: 
+# Run using AWS: 
 # python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week4/oct29_30/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --no-output
-
-# Really good for AWS Map Reduce: https://dataiap.github.io/dataiap/day5/mapreduce
-# MRJob documentation: https://media.readthedocs.org/pdf/mrjob/latest/mrjob.pdf
 
 import mrjob
 from mrjob.job import MRJob
@@ -99,7 +96,8 @@ class RelevantEntries(MRJob):
 		'''
 		Combiner function to sum up the total number of views and bytes 
 		for each Wikipedia page. Sometimes there are >1 entries for one
-		Wikipedia pagename, so we sum the pageviews and bytes
+		Wikipedia pagename for given datetime, so we sum the pageviews and 
+		bytes
 
 		Inputs: 
 			pagename: Wikipedia pagename and relevant datetime
@@ -108,7 +106,7 @@ class RelevantEntries(MRJob):
 
 		Outputs: 
 			String of relevant English Wikipedia page name and datetime
-			List of total view and bytes of that Wikipedia page
+			List of total view and bytes of that Wikipedia page and datetime
 		'''
 		page_numbers = numbers
 		pageviews = 0
@@ -132,7 +130,7 @@ class RelevantEntries(MRJob):
 			views: pseudo-list of number of views and bytes of page 
 
 		Outputs: 
-			String of relevant English Wikipedia page name, datetime, bytes, 
+			String of relevant English Wikipedia pagename, datetime, bytes, 
 			and pageviews. Output is of form: 
 			"pagename   datetime   pageviews   bytes"
 		'''

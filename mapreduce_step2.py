@@ -28,7 +28,6 @@ def wiki_homepages(pagename, json_file, titles_file):
 	line_index = titles[titles[[0]] == pagename].dropna().index.tolist() 
 
 	if line_index == []: 
-		print('pagename does not exist')
 		return None
 
 	page_line_num = line_index[0] + 1
@@ -55,7 +54,9 @@ class PageName(MRJob):
 	each datetime. This information is relevant to perform the regression 
 	analyses. This MRJob is best run on the local machine, as it creates a 
 	JSON file that is most easily manipulated on the local machine, which is 
-	used to calculate the bytes ratio for each page. 
+	used to calculate the bytes ratio for each page. We didn't use this 
+	function for our final data analysis, but we used it for our initial data
+	analysis. 
 
 	PageName takes in output files from mapreduce_step1.py, meaning txt files
 	with all potentially relevant English Wikipedia pagenames, datetimes, 
@@ -95,7 +96,6 @@ class PageName(MRJob):
 
 		# Calling helper to determine the pagenames linked to interest pagename
 		self.interest = wiki_homepages(self.page_of_interest, str(self.links), str(self.titles))
-		print(self.interest)
 
 
 	def mapper_first(self, _, line):
@@ -237,9 +237,11 @@ class PageName(MRJob):
 			bytes_ratio = round(interest_bytes / self.page_of_interest_bytes[fields[1]], 2)
 			# output_line looks like: pagename   datetime   pageviews   bytes_ratio
 			if fields[0] != self.page_of_interest: 
-				output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(bytes_ratio)
+				output_line = fields[0] + "   " + fields[1] + "   " + \
+				fields[2] + "   " + str(bytes_ratio)
 			else: 
-				output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(bytes_ratio) + "   " + str(interest_bytes)
+				output_line = fields[0] + "   " + fields[1] + "   " + \
+				fields[2] + "   " + str(bytes_ratio) + "   " + str(interest_bytes)
 
 			yield None, output_line	
 

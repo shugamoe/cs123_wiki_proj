@@ -1,46 +1,29 @@
-# mapreduce_step1.py command on emr: 
-# python3 mapreduce_step1.py -r emr s3://wikitrafv2big/oct2008_en/Week4/oct29_30/ --output-dir=s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --no-output
-
 # To run the below code on local machine
 # python3 mapreduce_step2_no_json.py -o "one-to-five" --link=samples/sample_5_5 --no-output --jobconf mapreduce.job.reduces=1 mrjob_test_output
 
 # To run on S3: 
-# python3 mapreduce_step2_no_json.py -r emr --cluster-id j-275HT34NGNX71 --link=one_to_five_inlinks.txt --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Week4_Step1/oct29_30_step1/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/test/output/ --no-output
-
 # python3 mapreduce_step2_no_json.py -r emr --cluster-id j-275HT34NGNX71 --link=samples/sample_5_20 --jobconf mapreduce.job.reduces=1 s3://wikitrafv2big/oct2008_en_step1/Oct_Total/ --output-dir=s3://wikitrafv2big/oct2008_en_step2/test/output_month_5_20/ --no-output
-
-# Data size = 9.26GB + 10.09GB + 9.18GB + 13.62GB = 42.15GB
-# Folders = 104 + 62 + 81 + 106 = 353 Files
 
 import mrjob
 from mrjob.job import MRJob
 import json
 import re
 import os
-# import pandas as pd
 
-
-# def two_inlinks_sample(json_file_one_to_five):
-# 	'''
-# 	Andy's function for a two link sample
-# 	'''
-    
-# 	two_inlinks_sample = {}
-
-	# with open(json_file_one_to_five, 'r') as f:
-	# 	inlinks_dict = json.load(f)
-
-# 	two_inlinks_sample['Wrestling_Slang'] = inlinks_dict['Wrestling_Slang']
-# 	two_inlinks_sample['Concordia_University,_St._Paul'] = \
-# 		inlinks_dict['Concordia_University,_St._Paul']
-# 	two_inlinks_sample['A_Spaceman_Came_Travelling_(Christmas_Remix)'] = \
-# 		inlinks_dict['A_Spaceman_Came_Travelling_(Christmas_Remix)']
-# 	two_inlinks_sample['Transcendentals'] = inlinks_dict['Transcendentals']
-# 	two_inlinks_sample['Platinum_Card'] = inlinks_dict['Platinum_Card']
-
-# 	return two_inlinks_sample
 
 def one_to_five_inlinks_sample(sample_file):
+	'''
+	Function to get the pagename and links of interest that we are interested
+	in testing. Another function creates a dictionary with the list of 
+	pagenames of interest
+
+	Input: 
+		sample_file: JSON file containing pages of interest and corresponding 
+			inlinks
+
+	Output: 
+		sample_dict: dictionary of pages of interest and corresponding inlinks
+	'''
 	with open(sample_file, 'r') as f:
 
 		sample_dict = json.load(f) 
@@ -51,7 +34,7 @@ def one_to_five_inlinks_sample(sample_file):
 class PageName(MRJob):
 	'''
 	Class using MRJob to determine the determine all of the links associated
-	with one Wikipedia page of interest, and retrieve the pagename, datetime, 
+	with the Wikipedia pages of interest, and retrieve the pagename, datetime, 
 	pageviews, and bytes for each datetime. This info is relevant to perform 
 	the regression analyses. This function doesn't use a json file to store 
 	the homepage bytes numbers, unlike the mapreduce_step2.py, which is run
@@ -69,8 +52,8 @@ class PageName(MRJob):
 		'''
 		To provide passthrough options when calling PageName class in the 
 		Terminal. Passthrough options include: 
-			--link: links.txt file containing all Wikipedia pagenames that are 
-				links to any given Wikipedia page of interest
+			--link: file containing all Wikipedia pagenames of interest 
+				and all associated inlinks
 		'''
 		super(PageName, self).configure_options()
 		self.add_file_option('--link')
@@ -88,13 +71,12 @@ class PageName(MRJob):
 		self.links = self.options.link
 
 		# Calling helper to determine the pagenames linked to interest pagename
-		# self.interest = two_inlinks_sample(str(self.links))
 		self.interest = one_to_five_inlinks_sample(str(self.links))
 
 		# All homepages of interest
 		self.interest_keys = list(self.interest.keys())
 
-		# All inlinks of interest
+		# All inlinks of interest. In form of a list
 		self.interest_values = []
 		for each in self.interest.values():
 			self.interest_values += each
@@ -103,7 +85,8 @@ class PageName(MRJob):
 	def mapper(self, _, line):
 		'''
 		Function that yields pagenames that are links to the page of 
-		interest. Takes the output from mapreduce_step1.py. 
+		interest, as well as pages of interest. Takes the output from 
+		mapreduce_step1.py. 
 
 		Input: 
 			line: row of mapreduce_step1.py file, of form: 
@@ -125,20 +108,17 @@ class PageName(MRJob):
 		
 			# Conditional if pagename is a homepage
 			if title in self.interest_keys:
-				# fields[3] looks like: 25"			need to get rid of quotation mark. 
 				yield title + "   " + fields[1] + "   " + fields[2], int(fields[3])
 
 			# Conditional if pagename is an inlink
 			elif title in self.interest_values:
-				# fields[3] looks like: 2500"			need to get rid of quotation mark. 
-
 				yield title + "   " + fields[1] + "   " + fields[2], int(fields[3])
 
 
 	def combiner(self, relevant_line, bytes):
 		'''
-		Function to sum up bytes for each relevant Wikipedia page. 
-		Realistically bytes data should not change since mostly unique entries. 
+		Function to sum up bytes for each relevant Wikipedia page. Potentially 
+		more than one entry for a given pagename and datetime. 
 
 		Inputs: 
 			relevant_line: Relevant pagename, associated datetime, and pageviews
@@ -168,7 +148,7 @@ class PageName(MRJob):
 		fields = relevant_line.split("   ")
 		relevant_bytes = sum(bytes)
 
-		# Do not care if bytes info = 0. Most likely problem in data
+		# Do not care if bytes info = 0. Most likely error in data
 		if relevant_bytes != 0: 
 			output_line = fields[0] + "   " + fields[1] + "   " + fields[2] + "   " + str(relevant_bytes)
 
