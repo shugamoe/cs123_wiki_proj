@@ -11,6 +11,9 @@ output:
   word_document:
     toc: yes
 ---
+```{r, echo = FALSE}
+# Read in all of our regressions
+```
 
 # Data Files
 
@@ -125,7 +128,7 @@ Even with our data free of all non-English entries.  There were still a number o
 
 ## Producing Data to Test Our Hypothesis
 
-Ideally, if we wanted to test our hypothesis on "Page A" over a period of time, we would want to be able to record a single observation for every hour, with each observation containing the traffic and bytes information for Page A *and* it's inlinks.  Unfortunately our data was only a sample of hourly Wikipedia traffic, so we weren't guaranteed to have information about Page A for any particular hour.  (Indeed, in the initial filtering of the non-English entries there were entire files containing no English entries whatsoever!)  Given this fact and our one month data constraint (744 hours), testing our hypothesis on any single page with a large number of inlinks was not feasible, as the higher the number of inlinks a page had, the fewer "complete" observations we would be able to skim from the data.  We chose to focus on pages with anywhere from 1-5 inlinks so that if we were 
+Ideally, if we wanted to test our hypothesis on "Page A" over a period of time, we would want to be able to record a single observation for every hour, with each observation containing the traffic and bytes information for Page A *and* it's inlinks.  Unfortunately our data was only a sample of hourly Wikipedia traffic, so we weren't guaranteed to have information about Page A for any particular hour.  (Indeed, in the initial filtering of the non-English entries there were entire files containing no English entries whatsoever!)  Given this fact and our one month data constraint (744 hours), testing our hypothesis on any single page with a large number of inlinks was not feasible, as the higher the number of inlinks a page had, the fewer "complete" observations we would be able to skim from the data (probabilistically speaking).  We chose to focus on pages with anywhere from 1-5 inlinks so that if we were 
 
 
 
