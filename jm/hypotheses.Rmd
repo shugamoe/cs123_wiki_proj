@@ -162,7 +162,7 @@ Additionally, some of the pagenames in the raw data contain percent encoding, me
 
 Thus, "Step 1" would take a line of data of the form "language pagename pageviews bytes" and yield a line of data of the form "pagename   datetime   pageviews   bytes".  To run "Step 1" for all of the raw data in October 2008, it took roughly 12 hours for 14 instances, resulting in 42.15G of data.  
 
-When we have a specific pagename or group of pagenames and associated inlinks of which we want the corresponding hourly information over the monthly dataset, we use this "Step 1" output in our mapreduce_step2_no_json.py ("Step 2") to yield only those lines pertaining to the pages of interest.  
+When we have a specific pagename or group of pagenames and associated inlinks of which we want the corresponding hourly information over the monthly dataset, we use this "Step 1" output in our mapreduce_step2_no_json.py ("Step 2") to yield only those lines pertaining to the pages of interest and their corresponding inlinks.
 
 ## Producing Data to Test Our Hypothesis
 
