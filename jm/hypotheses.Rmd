@@ -224,6 +224,14 @@ Additionally, throughout the project, I relied too much on utilizing mrjob and A
 
 Anyways, moving forward, thanks to plenty of things I've realized about doing this project in hindsight, I think I'm in a good spot to further improve working with AWS, mrjob, and big data and experimental design in general.  I still have ~10 months left in my free AWS account and I'll spend some of my summer refining some of the procedures that my group and I used in this project.  
 
+## Bobby Adusumilli
+
+Working primarily on the MRJob functions, I went through many different iterations of both the MRJob "Step 1" and MRJob "Step 2" files. Particularly with the MRJob "Step 1" file, I went from an attempt to gunzip a file within the function (couldn't do it, but took a while to figure that out) to the current version of removing percent encoding and all pagenames that cannot have inlinks. 
+
+For the MRJob "Step 2" file, we went through several iterations (primarily successful, yet each doing something slightly different) before we decided on the optimal solution of yielding all of the entries of the pages of interest and the corresponding inlinks, and having other functions to convert this data to perform data analysis in R. This is probably the step that I learned the most from, because I tried so many different ways of getting the data to output a certain way. 
+
+Reading through the MRJob documentation towards the end of the project, I realize how much time I could have saved by reading that documentation before I started the project. But at least I learned a lot from these mistakes (even if I lost a good amount of time).  Overall, I enjoyed working on this project.  I also realized that Julian and Andy are vastly superior programmers than me.  I got lucky with my group. 
+
 
 
 
