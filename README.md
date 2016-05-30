@@ -26,3 +26,20 @@ for a given pagename over a given dataset.
 opening_wikipedia_files.txt - Text file on how to open Wikipedia data 
 from AWS and transfer it to a local machine. Relevant for when we 
 initially started the project. 
+
+inverse.py - Contains a function that uses links.txt which lists all pages and 
+their outlinks, and effectively creates a dictionary that inverts it. So, the 
+new dictionary lists all pages and their inlinks. This is then dumped to a 
+file in the directory called 'links'
+
+inlinks.py - Contains wiki_homepages functionthat returns a list of inlinks 
+given a pagename by using the 'links' json-encoded dict and the 
+titles-sorted.txt file to convert page numbers into actual titles. This file
+also contains various functions that either dump a subset of 'links', where 
+each page contains one to five inlinks, or loads a json dump and returns a 
+small dict with page titles and specified inlinks for each.
+
+network_analysis.py - Uses 'links' to create certain network graphs. After
+specifying a pagename, the graph_from_page function creates a set of nodes
+starting with pagename, and recursively branches out from each inlink to create
+inlinks of inlinks, etc. depending on the num_of_steps parameter.
