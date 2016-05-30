@@ -67,6 +67,8 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
     Generates a dict of num_of_pages pages with num_of_inlinks inlinks by 
     loading json_file (a dict containing all pages with one to five inlinks), 
     filtering through, and appending suitable items into the dict inlinks_sample.
+    inlinks_sample is then dumped into a sample directory, which is used for
+    the function one_to_five_inlinks_sample.
     Inputs:
         json_file - file of the json containing the line numbers of 
                     pages and their inlinks
@@ -74,8 +76,6 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
         num_of_inlinks - parameter determining the number of inlinks for each 
                          page
         num_of_pages - parameter determining the number of pages needed
-    Output:
-        inlinks_sample dictionary dumped into output_file
 
     '''
     titles = pd.read_csv(titles_file, delimiter = ' ', names = ['page title'])
@@ -88,6 +88,7 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
                 # convert key from line number (int) to pagename (str)
                 key_name = titles.iloc[[int(key) - 1]].values[0][0]
                 
+                # parsing titles to remove unusual characters
                 title = urllib.parse.unquote_plus(key_name)
                 x = 0
                 while '%' in title:
@@ -95,9 +96,11 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
                         break
                     title = urllib.parse.unquote_plus(title)
                     x += 1
+
                 # convert each value from line number (int) to pagename (str)
                 for v in val: 
                     val_name = titles.iloc[[int(v) - 1]].values[0][0]
+                    # parsing title to remove unusual characters
                     title = urllib.parse.unquote_plus(val_name)
                     x = 0
                     while '%' in title:
@@ -106,16 +109,22 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
                         title = urllib.parse.unquote_plus(title)
                         x += 1
 
+                    # appends val_name to key_name in inlink_sample dict
                     inlinks_sample[key_name] = inlinks_sample.get(key_name, \
                         []) + [val_name]
                 count += 1
 
-            if count == num_of_pages:
+            if count == num_of_pages: 
+                # once num_of_pages pages with the specified attributes
+                # are obtained, dump the inlinks_sample dict and return None
                 with open('samples/sample_' + str(num_of_inlinks) + '_' + \
                     str(num_of_pages), 'w') as f:
                     json.dump(inlinks_sample, f) 
                 return None
 
+    # if num_of_pages exceeds the number of pages that have num_of_inlinks
+    # inlinks, then all the pages with num_of_inlinks are dumped into the 
+    # proper file
     print('there are only {:} pages', count)
     with open('samples/sample_' + str(num_of_inlinks) + '_' + \
         str(num_of_pages), 'w') as f:
@@ -124,6 +133,16 @@ def one_to_five_inlinks_sample_dump(json_file, titles_file, num_of_inlinks, \
 
 
 def one_to_five_inlinks_sample(num_of_inlinks, num_of_pages):
+    '''
+    Loads the proper json file with num_of_inlinks inlinks and num_of_pages
+    pages, and returns the sample_dict.
+    Inputs:
+        num_of_inlinks - parameter determining the number of inlinks for each 
+                         page
+        num_of_pages - parameter determining the number of pages needed
+    Output:
+        sample_dict with num_of_pages pages with num_of_inlinks inlinks
+    '''
     with open('samples/sample_' + str(num_of_inlinks) + '_' + \
         str(num_of_pages), 'r') as f:
         
@@ -132,6 +151,14 @@ def one_to_five_inlinks_sample(num_of_inlinks, num_of_pages):
 
 
 def two_inlinks_sample(json_file_two):
+    '''
+    Returns a sample dict with two inlinks each.
+    Input:
+        json_file_two - a json file with a dictionary sample of pages
+                        with two inlinks each
+    Output:
+        a sample dict of pages with two inlinks as keys
+    '''
     
     two_inlinks_sample = {}
 
@@ -147,21 +174,3 @@ def two_inlinks_sample(json_file_two):
     two_inlinks_sample['Platinum_Card'] = inlinks_dict['Platinum_Card']
 
     return two_inlinks_sample
-
-
-def two_inlinks(json_file_one_to_five):
-    
-    two_inlinks_sample = {}
-
-    with open(json_file_one_to_five, 'r') as f:
-        inlinks_dict = json.load(f)
-
-    return inlinks_dict
-
-
-
-
-
-
-
-
